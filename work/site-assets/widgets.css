@@ -1,0 +1,130 @@
+/* Lesson widgets. A widget sits inside a lesson panel but reads as a piece of
+   equipment set into the page — darker ground, a hairline frame — so it is
+   obvious at a glance which parts of a lesson you touch and which you read. */
+.widget{margin:18px 0 0;border:1px solid #c2cdbb;border-radius:10px;background:#eaefe1;padding:16px 17px 14px;overflow:hidden}
+.widget+.widget{margin-top:14px}
+.widget-top{display:flex;align-items:baseline;gap:11px;flex-wrap:wrap}
+.widget-top .micro{color:#8a5333;flex:none}
+.widget-top h3{font-size:19px;letter-spacing:-.02em}
+.widget-hint{font-size:13.5px;color:var(--muted);margin-top:7px!important;max-width:70ch}
+.widget-body{margin-top:13px}
+.widget-body>*+*{margin-top:12px}
+.widget-say{margin-top:12px;padding:10px 12px;border-radius:7px;background:var(--card);border:1px solid #d3dcca;font-size:13.5px;line-height:1.55;color:#2f4536;min-height:42px}
+.widget-say:empty{display:none}
+.widget-say b{font-weight:700}
+.widget-say.incorrect{color:#8d4527;border-color:#e2bda4}
+
+.w-controls{display:flex;align-items:center;gap:13px;flex-wrap:wrap}
+.w-controls label{font-size:12.5px;font-weight:650;display:inline-flex;align-items:center;gap:7px}
+.w-controls input[type=range]{accent-color:#356e46;width:118px;max-width:40vw}
+.w-controls select{border-radius:6px;border:1px solid #bdc7b6;padding:6px 8px;background:var(--card);font-size:13px}
+.w-controls .compact{font-size:12.5px}
+.w-read{font:600 12px var(--mono);color:var(--muted);white-space:nowrap}
+.w-pills{display:flex;gap:7px;flex-wrap:wrap}
+
+/* Keyboards. A widget keybed carries its own frame rather than borrowing
+   .lab-keys, which performance.css lays out as two stacked banks for the
+   practice room — a flat run of keys needs one flex row. The tints say what a
+   key is doing: a landmark, a chord member, one end of an interval. */
+.w-keys{display:flex;position:relative;isolation:isolate;height:118px;max-width:100%;
+ border:3px solid #3b4139;border-radius:4px;overflow:hidden;background:#343b34;gap:1px;
+ touch-action:none;user-select:none}
+.w-keys .whitekey span,.w-keys .blackkey span{bottom:7px;font-size:11px;font-weight:700}
+.whitekey.lit-low,.whitekey.lit-root{background:#ffc283}
+.whitekey.lit-high,.whitekey.lit-fifth{background:#9fc6cc}
+.whitekey.lit-third{background:#b9d3a6}
+.whitekey.lit-seventh{background:#e0c9f0}
+.whitekey.lit-scale{background:#dde7d0}
+.blackkey.lit-low,.blackkey.lit-root{background:#c87a40}
+.blackkey.lit-high,.blackkey.lit-fifth{background:#4e767d}
+.blackkey.lit-third{background:#5c7f4b}
+.blackkey.lit-seventh{background:#7a5a90}
+.blackkey.lit-scale{background:#55634f}
+.w-strip{font-size:13px;display:flex;align-items:center;flex-wrap:wrap;gap:2px}
+.w-strip i{color:#9a4f2c;font-style:normal;font-weight:700;font-size:11px;padding:0 7px;letter-spacing:.06em}
+
+/* Step grid, melody grid and arrangement matrix share one skeleton. */
+.w-grid,.w-contour,.w-matrix{display:grid;gap:5px;align-items:center}
+/* The grids keep their cells tappable and scroll sideways on a phone rather
+   than shrinking to slivers or pushing the whole page wide. */
+/* Scroll shadows: the two `local` gradients ride with the content and the two
+   `scroll` ones stay pinned, so a shadow appears only on a side there is more
+   to see. Without it nobody discovers that the grid scrolls at all. */
+.w-scroll{overflow-x:auto;margin:0 -2px;padding:2px;
+ background:
+  linear-gradient(90deg,#eaefe1 40%,rgba(234,239,225,0)) left/26px 100% no-repeat local,
+  linear-gradient(270deg,#eaefe1 40%,rgba(234,239,225,0)) right/26px 100% no-repeat local,
+  radial-gradient(farthest-side at 0 50%,rgba(32,54,45,.18),rgba(32,54,45,0)) left/11px 100% no-repeat scroll,
+  radial-gradient(farthest-side at 100% 50%,rgba(32,54,45,.18),rgba(32,54,45,0)) right/11px 100% no-repeat scroll}
+.w-contour .cell,.w-matrix .cell{height:28px;background:#dde3d4;border:1px solid #c5cfbb;border-radius:5px;padding:0}
+.w-contour .cell{height:24px}
+.w-contour .cell[aria-pressed=true]{background:#5d868c;border-color:#476a6f}
+/* These four match the tones figures.js gives the same four layers, so the
+   arrangement diagram and the arrangement widget under it agree on sight. */
+.w-matrix .cell[aria-pressed=true]{background:#5b795c;border-color:#48664a}
+.w-matrix .cell.drums[aria-pressed=true]{background:#5d868c;border-color:#476a6f}
+.w-matrix .cell.bass[aria-pressed=true]{background:#8d9c8a;border-color:#74836f}
+.w-matrix .cell.chords[aria-pressed=true]{background:#4e7357;border-color:#3d5c45}
+.w-matrix .cell.lead[aria-pressed=true]{background:#e2954f;border-color:#c37d3c}
+.w-matrix .cell.now,.w-contour .cell.now,.w-grid .step.now{box-shadow:inset 0 0 0 3px #213d31}
+.w-matrix .count{display:block;font:650 11px/1.3 var(--sans);text-align:center;padding:3px 0}
+.w-matrix .count small{display:block;font:500 9px var(--mono);color:var(--muted);letter-spacing:.04em}
+.w-matrix .count.now{background:#ffd6a9;border-radius:4px}
+.w-grid .lane,.w-contour .lane,.w-matrix .lane{font-size:12px;font-weight:650;padding-right:4px}
+.w-contour .lane{font:11px var(--mono);color:var(--muted)}
+.w-grid .step{height:34px}
+
+/* Chord slots. */
+.w-slots{display:grid;grid-template-columns:repeat(auto-fit,minmax(104px,1fr));gap:9px}
+.w-slot{background:var(--card);border:1px solid #cbd5c2;border-radius:8px;padding:10px;display:grid;gap:6px;justify-items:start}
+.w-slot.now{border-color:#9a4f2c;box-shadow:0 0 0 2px #ffd6a9}
+.w-slot select{width:100%;border-radius:5px;border:1px solid #c3cdbb;padding:6px;background:#fbfcf5;font-size:13px}
+.w-slot b{font:700 15px var(--serif);color:#9a4f2c}
+
+/* Faders. Four explicit columns rather than auto-fit, so a four-track mixer
+   never leaves one channel stranded on a row of its own. */
+.w-faders{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.w-fader{background:var(--card);border:1px solid #cbd5c2;border-radius:8px;padding:11px 12px;display:grid;gap:6px}
+.w-fader b{font-size:13px}
+.w-fader label{display:grid;grid-template-columns:38px 1fr;align-items:center;gap:8px;font:600 10px var(--mono);letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+.w-fader input[type=range]{accent-color:#356e46;width:100%;min-width:0}
+
+/* A/B comparison. */
+.w-ab{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px}
+.w-abbtn{text-align:left;background:var(--card);border:1px solid #cbd5c2;border-radius:8px;padding:12px 13px;display:grid;gap:5px}
+.w-abbtn .micro{color:#9a4f2c}
+.w-abbtn b{font-size:14.5px;line-height:1.3}
+.w-abbtn small{font-size:12px;color:var(--muted);line-height:1.45}
+.w-abbtn[aria-pressed=true]{background:#294b38;border-color:#294b38;color:#f6f8ee}
+.w-abbtn[aria-pressed=true] .micro,.w-abbtn[aria-pressed=true] small{color:#cfdcc6}
+
+/* Tap-the-pulse. The scatter is the whole point: a cloud left of centre is
+   rushing, a cloud that walks across the strip is drifting. */
+.w-tapzone{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.w-tapbtn{width:104px;height:66px;border-radius:9px;background:var(--orange);border:1px solid #d9a469;box-shadow:0 3px 0 #c08d55;font:700 15px var(--sans);color:#33281a}
+.w-tapbtn:active{transform:translateY(2px);box-shadow:0 1px 0 #c08d55}
+.w-tapbtn:disabled{background:#dfe4d6;border-color:#c8d1bf;box-shadow:none;color:#8d9a8b}
+.w-tapread{font-size:14px}
+.w-tapread b{font-size:23px;font-family:var(--serif)}
+.w-tapread span{display:block;font:11px var(--mono);color:var(--muted);margin-top:3px}
+.w-scatter{position:relative;height:34px;border:1px solid #cbd5c2;border-radius:7px;background:var(--card);overflow:hidden}
+.w-scatter i{position:absolute;top:7px;width:3px;height:20px;margin-left:-1.5px;border-radius:2px;background:#c0673c}
+.w-scatter i.good{background:#5b795c}
+.w-zero{position:absolute;left:50%;top:0;bottom:0;width:1px;background:#9fae9c}
+.w-scale{display:flex;justify-content:space-between;font:10px var(--mono);color:var(--muted);margin-top:4px!important;letter-spacing:.06em}
+.w-scale span:nth-child(2){color:#4c6b52}
+
+/* Tempo beat strip. */
+.w-beats{display:flex;gap:6px}
+.w-beats i{flex:1;height:38px;border-radius:6px;background:#dde3d4;border:1px solid #c5cfbb;font:600 12px/36px var(--mono);font-style:normal;text-align:center;color:var(--muted)}
+.w-beats i.one{background:#e6e0cc}
+.w-beats i.now{background:#ffc283;border-color:#d9a469;color:#33281a}
+
+@media(max-width:700px){
+ .widget{padding:13px 12px 12px;border-radius:9px}
+ .widget-body>*+*{margin-top:10px}
+ .w-keys{height:96px}
+ .w-grid .lane,.w-contour .lane,.w-matrix .lane{font-size:10.5px}
+ .w-tapbtn{width:84px;height:58px}
+ .w-controls input[type=range]{width:96px}
+}

@@ -8,7 +8,9 @@ if not source.exists():
     source.write_text((project/'index.html').read_text())
 markup=source.read_text()
 assets=root/'work/site-assets'
-css=(assets/'studio.css').read_text()+'\n'+(assets/'performance.css').read_text()
+# widgets.css comes last so its single-class rules win over the same-specificity
+# base rules it deliberately overrides (.w-keys against .lab-keys, say).
+css='\n'.join((assets/name).read_text() for name in ('studio.css','performance.css','widgets.css'))
 markup=markup.replace('<link rel="stylesheet" href="assets/studio.css">','<style>\n'+css+'\n</style>')
 def inline(match):
     body=(assets/Path(match.group(1)).name).read_text()

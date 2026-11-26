@@ -5,21 +5,47 @@ Open **index.html** in Safari, Chrome, Firefox, or Edge. The lessons, instrument
 ## A first session
 
 1. Select **Hear the song** on the overview. Listen for the drums entering and the hook arriving.
-2. Open **Rhythm & time**. Clap on beats 2 and 4, then use the beat grid to try it at 72 BPM.
-3. Work down the page, answer the check at the bottom, then return once from memory. Continue in order through the twelve lessons.
+2. Open **Lessons** and start **Chapter 01 · Music theory**. Lesson 1 is **Pulse, beat and bar**: tap along with the click, then build a backbeat in the grid on the same page.
+3. Work down the page, answer the check at the bottom, then return once from memory. Take the chapters in order.
 4. Open **Song project** and **GarageBand** together when you are ready to record. Choose Mac or iPhone & iPad in the guide.
+
+## The three chapters
+
+The course is eighteen lessons in three chapters, and they are separated by subject so the topic does not jump around:
+
+1. **Music theory** — eleven lessons on how music is put together: beats and bars, note lengths, tempo and time signature, the twelve notes, intervals, scales, keys and minor, triads, inversions, progressions and cadences, melody. No microphones and no software.
+2. **Writing a song** — three lessons on turning that into parts: drums and bass, phrasing and lyrics, song form and arrangement.
+3. **The studio** — four lessons on the craft after the song exists: recording a take, editing regions and timing, mixing, and exporting.
+
+Theory comes first and comes complete. Nothing in chapters 2 and 3 uses a musical term that chapter 1 has not already defined.
 
 ## How a lesson is laid out
 
 Every lesson has the same shape, so you always know where you are:
 
-1. **Get the idea** — the plain-language version, no jargon and no arithmetic.
-2. **A diagram of exactly that** — the keyboard, the rhythm grid, the melody or the arrangement being described, drawn rather than written out.
-3. **The precise version** — the same idea with the terms named. Terms appear in **bold** where they are defined, and nothing is used before it is explained.
-4. **A reference table**, then **Try it yourself**, then **In GarageBand**.
-5. **Check yourself** — one question, at the bottom, about something the lesson has already covered.
+1. **What this lesson gives you** — one sentence on what you will be able to do by the end.
+2. **Four to six numbered steps.** Each step is one idea: a short heading, a paragraph or two, then either a diagram of exactly what was just described or something to play with. Terms appear in **bold** where they are defined, and nothing is used before it is explained.
+3. **Reference** — a table of the lesson's facts in one place.
+4. **In short** — the three or four things to remember.
+5. **Try it yourself**, then **In GarageBand**.
+6. **Check yourself** — one question, at the bottom, about something the lesson has already covered.
 
-The panel on the right is the readiness check: what you should be able to do before moving on, and the box to tick when you can.
+The panel on the right is the readiness check — what you should be able to do before moving on, and the box to tick when you can — followed by the list of lessons in this chapter, showing where you are.
+
+## Learning by playing
+
+Every lesson carries at least one thing you operate rather than read. They are inline, so you never leave the explanation to try it:
+
+- **Tap along with a click** and see your timing error in milliseconds.
+- **Build a drum pattern** by clicking cells, then play it at any tempo.
+- **Press a key** and have it named, or press two and have the interval between them measured.
+- **Light up any scale** from any starting note, and watch which black keys appear.
+- **Build any triad**, change its quality, and turn it over into its inversions.
+- **Put chords in four bars** and hear whether the loop closes or stays open.
+- **Draw a melody** on the scale degrees and play it over chords.
+- **Switch layers on and off** across the four sections of the sixteen-bar song.
+- **Move faders and panners** while a mix loops, and hear a part disappear without being turned down.
+- **A/B two versions** of the same thing: major against minor, sloppy against quantised, dry against distant.
 
 ## Play the piano
 

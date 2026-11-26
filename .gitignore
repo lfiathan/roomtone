@@ -17,3 +17,8 @@ outputs/
 work/transfer.*/
 work/final-transfer.*/
 work/keyboard-save.*/
+
+# Ad-hoc review screenshots and the nav scripts `make shot` writes
+work/qa/nav-*.js
+work/qa/final/v2-*.png
+work/qa/final/smoke.png

@@ -14,6 +14,9 @@ const voices={
 };
 const MusicEngine=(()=>{
  let mixer, takes=null, finished=null;
+ // A destination may be named ('drums'), handed over as a node — which is how
+ // a lesson widget gets its own fader and panner — or left out for the master.
+ const route=(bus,dest)=>dest||(typeof bus==='string'?mixer.bus[bus]:bus)||StudioAudio.output;
  const sounding=new Set();
  function setup(){
   if(!StudioAudio.ready())return false;
@@ -42,7 +45,7 @@ const MusicEngine=(()=>{
   const limit=options.duration, strength=options.level??.24;
   const env=ctx.createGain(), filter=ctx.createBiquadFilter();
   filter.type='lowpass';filter.frequency.value=options.cutoff??cfg.cutoff;
-  env.connect(filter);filter.connect(options.bus?mixer.bus[options.bus]:StudioAudio.output);
+  env.connect(filter);filter.connect(route(options.bus,options.dest));
   const peak=Math.max(.0002,strength), floor=.0001, sustain=Math.max(floor,peak*cfg.sustain);
   const envelope=(age)=>age<=0?floor:age<cfg.attack?floor+(peak-floor)*age/cfg.attack:age<cfg.attack+cfg.decay?peak*(sustain/peak)**((age-cfg.attack)/cfg.decay):sustain;
   env.gain.setValueAtTime(floor,at);env.gain.linearRampToValueAtTime(peak,at+cfg.attack);env.gain.exponentialRampToValueAtTime(sustain,at+cfg.attack+cfg.decay);
@@ -69,7 +72,7 @@ const MusicEngine=(()=>{
   sounding.add(silence);if(limit!==undefined)release(at+limit);return ()=>release();
  }
  function hit(id,t,strength=.85,bus){
-  if(!setup())return;const ctx=StudioAudio.context,dest=bus?mixer.bus[bus]:StudioAudio.output;
+  if(!setup())return;const ctx=StudioAudio.context,dest=route(bus);
   t=t??ctx.currentTime;
   if(['kick','snare','hat','click','accent'].includes(id)){StudioAudio.drum(id,t,strength,dest);return;}
   if(id==='tom'||id==='rim'){

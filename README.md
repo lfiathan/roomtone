@@ -16,7 +16,7 @@ window-seat.mid       (base64) ─┘
 
 | Path | What it holds |
 |---|---|
-| `work/site-assets/` | The real source: 10 CSS and JS modules |
+| `work/site-assets/` | The real source: 15 CSS and JS modules |
 | `work/site-template.html` | Page shell the assets are inlined into |
 | `work/*.py`, `work/*.js` | Build scripts (see targets below) |
 | `work/qa/` | WebKit screenshot and assertion harnesses |
@@ -52,7 +52,7 @@ PYTHON=.venv/bin/python make all
 | `make package` | Mirror into `outputs/` and rebuild the zip |
 | `make verify` | Confirm `index.html` is not stale |
 | `make check` | Confirm the beat MIDI still matches what is committed |
-| `make qa` | Run all five headless interaction suites (macOS) |
+| `make qa` | Run all six headless interaction suites (macOS) |
 | `make serve` | Preview at `http://localhost:8080` |
 
 ## Build with Docker
@@ -93,8 +93,8 @@ consequences:
 
 ## Tests
 
-`make qa` compiles two small Objective-C/WebKit harnesses and runs five suites
-against the built page:
+`make qa` compiles two small Objective-C/WebKit harnesses and runs six suites
+against the built page — 1,268 assertions in total:
 
 - `work/qa/check-upgrade.js` — 421 assertions over the keyboard mapping, beat
   grid, templates, routing and WAV capture.
@@ -102,18 +102,81 @@ against the built page:
   transpose, scene recall and persistence.
 - `work/qa/check-piano.js` — 57 assertions over the piano keybed, the typing
   window, the sustain pedal, touch and MIDI input.
-- `work/qa/check-lessons.js` — 228 assertions over the lesson figures, the fixed
-  page shape, vocabulary order and the quiz.
-- `work/qa/check-narrow.js` — 49 assertions that every route fits a 390px
-  viewport, run at that width.
+- `work/qa/check-lessons.js` — 541 assertions over the chapter split, the fixed
+  lesson shape, the figures, vocabulary order and the quiz.
+- `work/qa/check-widgets.js` — 71 assertions that drive all nine widget kinds:
+  pressing keys, toggling cells, dragging faders, starting and stopping the
+  transport.
+- `work/qa/check-narrow.js` — 134 assertions that every route fits a 390px
+  viewport and that the widget grids scroll rather than squeeze, run at that
+  width.
 
-All five stub `AudioContext` with `OfflineAudioContext`, so the audio graph is
+All six stub `AudioContext` with `OfflineAudioContext`, so the audio graph is
 exercised without an output device.
+
+Two checks in `check-lessons.js` are worth knowing about, because they enforce
+editorial rules rather than code behaviour. The course marks a term in `<b>`
+at the point it is defined, so the suite reads those tags back out and fails if
+a term is used in a quiz before the lesson that defines it, or if any term is
+introduced as new twice. Neither rule needs a list to maintain: both are derived
+from the prose itself.
+
+## Course structure
+
+The course is three chapters, one source file each, assembled in `lessons.js`:
+
+| File | Chapter | Lessons |
+|---|---|---|
+| `course-theory.js` | Music theory | 11, in modules Time / Pitch / Harmony / Melody |
+| `course-writing.js` | Writing a song | 3, in Groove / Words / Form |
+| `course-studio.js` | The studio | 4, in Recording / Editing / Mixing / Finishing |
+
+Theory is deliberately complete and comes first: nothing in chapters 2 and 3
+introduces a musical term chapter 1 has not already defined, which is what the
+vocabulary checks above enforce.
+
+A lesson is a list of `blocks`, and a block is one idea — a heading, a paragraph
+or two, then a figure of what was just described or a widget that does it:
+
+```js
+blocks:[
+ {h:'Beats come in groups',
+  p:['...','...'],
+  fig:{kind:'grid', ...},
+  widget:{kind:'steps', ...}}
+]
+```
+
+`lesson()` in `studio.js` numbers them, so the progression through a lesson is
+visible on the page rather than implied.
+
+## Lesson widgets
+
+`work/site-assets/widgets.js` holds nine interactive primitives, named as data
+in the same way the figures are:
+
+| `kind` | What you do with it |
+|---|---|
+| `keys` | A keybed in one of four modes: name a note, measure an interval, light a scale, build a chord with inversions |
+| `steps` | An editable drum grid with a tempo slider |
+| `tempo` | A click with the BPM arithmetic updating live, and a metre selector |
+| `chords` | Four chord slots with roman numerals and a looping playback |
+| `contour` | A melody you draw on the scale degrees |
+| `arrange` | Layers against sections, playing all sixteen bars |
+| `mix` | Faders and panners over a looping bed |
+| `compare` | Two to four versions of the same thing, A/B |
+| `tap` | Tap along with a click; reports your timing error in milliseconds |
+
+Each widget owns its state in `W_STATE`, keyed by an id handed out at render
+time. `render()` calls `resetWidgets()` before building a page, so ids restart
+from one and nothing leaks between routes. Audio goes through `MusicEngine` and
+`StudioAudio`; `MusicEngine.play` and `.hit` accept a destination node, which is
+how the mixer widget gets its own gain and panner per track.
 
 ## Lesson figures
 
 `work/site-assets/figures.js` holds five SVG primitives — `keys`, `grid`,
-`timeline`, `contour` and `meters` — and each lesson names one as data rather
+`timeline`, `contour` and `meters` — and each block names one as data rather
 than drawing its own markup:
 
 ```js
@@ -128,7 +191,8 @@ is missing or if a figure stops marking the notes or hits its caption claims.
 
 The lesson cards reuse the same drawings. `figureThumb` re-renders a figure with
 the labels dropped and the name gutter closed up, because a card tile is about
-400x112 and the figure's own type would land at seven pixels. The shapes still
-tell the twelve lessons apart; the card heading carries the words. There is no
-second set of artwork to keep in step — edit a lesson's figure and its card
-follows.
+400x128 and the figure's own type would land at seven pixels. The shapes still
+tell the eighteen lessons apart; the card heading carries the words. A card
+takes the first figure of its lesson, derived once in `lessons.js`, so there is
+no second set of artwork to keep in step and no way for a card to illustrate a
+lesson with a picture that lesson does not contain.

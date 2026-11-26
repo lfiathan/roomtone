@@ -55,17 +55,19 @@ work/qa/render: work/qa/render.m
 work/qa/qa-live: work/qa/qa-live.m
 	clang $< -o $@ -framework Cocoa -framework WebKit -Wno-deprecated-declarations
 
-## qa: run the five headless interaction suites against the built site (macOS only)
+## qa: run the six headless interaction suites against the built site (macOS only)
 qa: qa-tools
 	./work/qa/qa-live $(PWD)/$(PROJECT)/index.html $(PWD)/work/qa/final/home.png 1280 $(PWD)/work/qa/check-upgrade.js
 	./work/qa/qa-live $(PWD)/$(PROJECT)/index.html $(PWD)/work/qa/final/freestyle-parts.png 1280 $(PWD)/work/qa/check-freestyle.js
 	./work/qa/qa-live $(PWD)/$(PROJECT)/index.html $(PWD)/work/qa/final/piano-qa.png 1280 $(PWD)/work/qa/check-piano.js
 	./work/qa/qa-live $(PWD)/$(PROJECT)/index.html $(PWD)/work/qa/final/lessons-qa.png 1280 $(PWD)/work/qa/check-lessons.js
+	./work/qa/qa-live $(PWD)/$(PROJECT)/index.html $(PWD)/work/qa/final/widgets-qa.png 1280 $(PWD)/work/qa/check-widgets.js
 	./work/qa/qa-live $(PWD)/$(PROJECT)/index.html $(PWD)/work/qa/final/narrow-qa.png 390 $(PWD)/work/qa/check-narrow.js
 
-## shot: screenshot a route, e.g. make shot ROUTE=freestyle WIDTH=1280
+## shot: screenshot a route, e.g. make shot ROUTE=lesson/6 WIDTH=1280
 shot: qa-tools
-	./work/qa/render $(PWD)/$(PROJECT)/index.html $(PWD)/work/qa/final/$(ROUTE).png $(WIDTH)
+	@printf 'location.hash="%s";\n' '$(ROUTE)' > work/qa/nav-shot.js
+	./work/qa/render $(PWD)/$(PROJECT)/index.html $(PWD)/work/qa/final/$(subst /,-,$(ROUTE)).png $(WIDTH) $(PWD)/work/qa/nav-shot.js
 
 ## serve: preview the built site at http://localhost:$(PORT)
 serve:
