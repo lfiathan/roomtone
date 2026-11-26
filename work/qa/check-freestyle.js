@@ -89,15 +89,39 @@
   check('the density label redrew',$('[data-density-label="2"]').textContent==='Density 70%');
   check('Lift is no longer the active scene',$('[data-scene="Lift"]').getAttribute('aria-pressed')==='false');
 
-  // Editing a part by hand has to leave the scene no longer matching.
+  // Changes belong to the selected scene.
   pick('[data-style="bass"]','octaves');
-  check('an edited part clears the scene light',$('[data-scene="Break"]').getAttribute('aria-pressed')==='false');
+  check('an edited part keeps the selected scene',$('[data-scene="Break"]').getAttribute('aria-pressed')==='true');
 
-  // --- state survives a reload ------------------------------------------
+  // Each scene can recall its own drum hits, bass notes, and template.
+  const practice=JSON.stringify(snapshot());
+  $('[data-scene="Intro"]').click();
+  $('[data-rhythm-edit]').click();
+  $('[data-copy-practice]').click();
+  const initial=mix.drums.rows[0][0];
+  $('[data-edit-drum="0"][data-rhythm-step="0"]').click();
+  $('[data-rhythm-part="bass"]').click();
+  $('[data-edit-bass="fifth"][data-rhythm-step="0"]').click();
+  pick('[data-bass-voice]','sine');
+  $('[data-scene="Outro"]').click();
+  $('[data-deck-templates]').parentElement.open=true;
+  pick('[data-family]','Hip-hop & bass');
+  pick('[data-template]','trap');
+  $('[data-load-rhythm]').click();
+  check('Outro can load genre drums and bass',mix.drums.templateId==='trap'&&mix.drums.size===2&&mix.layers[0]&&mix.layers[1]);
+  check('the Practice grid and tempo survive deck edits',JSON.stringify(snapshot())===practice);
+  $('[data-scene="Intro"]').click();
+  check('Intro recalls its own drum edit',mix.drums.rows[0][0]===Number(!initial));
+  check('Intro recalls its custom bass',mix.styles.bass==='custom'&&mix.bassLine[0]==='fifth'&&mix.bassVoice==='sine');
+  const stored=JSON.parse(localStorage.getItem('roomtone.v1.freestyle'));
+  check('scene rhythms persist separately',stored.scenes.Intro.bassLine[0]==='fifth'&&stored.scenes.Outro.drums.templateId==='trap');
+  $('[data-rhythm-edit]').click();
+
+  // --- state survives navigation ---------------------------------------
   $('[data-scene="Groove"]').click();
   await goto('home');await goto('freestyle');
   check('the part selection survives navigation',$('[data-style="chords"]').value===mix.styles.chords);
-  check('the stored mix round-trips',JSON.parse(localStorage.getItem('roomtone.v1.freestyle')).styles.bass==='roots');
+  check('the stored mix round-trips',JSON.parse(localStorage.getItem('roomtone.v1.freestyle')).styles.bass==='walking');
 
   // --- the decks still run ----------------------------------------------
   $('[data-deck-play]').click();await delay(160);

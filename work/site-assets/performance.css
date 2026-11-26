@@ -26,3 +26,53 @@
  .key-map th,.key-map td{padding:5px 3px}
  .key-map kbd{font-size:10px;padding:2px 3px}
 }
+
+#freestyle-board .scene-row{padding:0 0 13px}
+#freestyle-board .scene{min-height:32px}
+#freestyle-board .part-row select{min-width:0}
+#freestyle-board .tempo-control{gap:3px;align-items:stretch}
+#freestyle-board .tempo-control input{max-width:none}
+.deck-edit{
+ margin-top:13px;width:100%;min-height:34px;padding:5px 8px;
+ border:1px solid #8a9d83;border-radius:5px;color:#f5f4e7;background:#233e32;
+ font-weight:650;font-size:12px;
+}
+.deck-edit:hover,.deck-edit[aria-expanded=true]{background:#3e5d49}
+.rhythm-editor{
+ margin-top:14px;padding:18px;border:1px solid #b5c5ae;border-radius:8px;
+ background:#f7f6ed;color:var(--ink);min-width:0;
+}
+.rhythm-editor-head,.rhythm-toolbar{
+ display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;
+}
+.rhythm-editor-head h3{font:650 19px/1.25 var(--sans);letter-spacing:-.025em}
+.rhythm-editor-head p,.rhythm-hint{color:var(--muted);font-size:12px}
+.rhythm-editor-head .pill:disabled{opacity:.5;cursor:default}
+.rhythm-editor .pill-row{gap:7px;margin-top:10px}
+.deck-template-menu{
+ margin:12px 0;padding:7px 10px;border:1px solid #c0cebb;border-radius:6px;background:#ecf0e5;
+}
+.deck-template-menu summary{cursor:pointer;font-size:13px;font-weight:700}
+.deck-genres{border:0;padding:10px 0 2px}
+.deck-genres .pill-row label,.rhythm-toolbar label{
+ display:flex;align-items:center;gap:5px;flex-wrap:wrap;
+ color:var(--muted);font-size:11px;font-weight:650;
+}
+.deck-genres .pill-row select,.rhythm-toolbar select{
+ max-width:100%;padding:5px;border:1px solid #a9baa3;border-radius:5px;
+ background:#fafaf3;color:var(--ink);font:650 12px var(--sans);
+}
+.rhythm-toolbar{justify-content:flex-start}
+.rhythm-tabs{display:flex;padding:2px;gap:2px;border:1px solid #bac8b3;border-radius:6px;background:#e7eddf}
+.rhythm-tabs button{padding:5px 10px;border-radius:4px;font-size:12px;font-weight:700}
+.rhythm-tabs button[aria-pressed=true]{background:#355744;color:#fff8e9}
+.rhythm-hint{margin:9px 0}
+.beat-grid.rhythm-grid{grid-template-columns:84px repeat(var(--columns),minmax(23px,1fr))}
+.rhythm-grid .step.bass-note[aria-pressed=true]{background:#617d65}
+.rhythm-grid button:focus-visible{outline-offset:-2px}
+@media(max-width:480px){
+ .rhythm-editor{padding:11px}
+ .rhythm-editor-head h3{font-size:16px}
+ .rhythm-toolbar{gap:7px}
+ .deck-genres .pill-row{align-items:flex-start}
+}

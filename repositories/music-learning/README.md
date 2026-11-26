@@ -62,21 +62,22 @@ Two limits are worth knowing when you play with the computer keyboard. It sends 
 
 ## Compose and perform
 
-Open **Freestyle**. Under **Genre templates**, choose a style family and a groove. **Preview beat** auditions it. **Load template** copies it into the drum grid along with its meter and tempo. The 37 patterns are original starting points grouped across eight style families.
+Open **Freestyle** and choose **Intro**, **Groove**, **Lift**, **Break**, or **Outro**. Each scene saves its own deck settings in this browser.
 
-1. Start the decks. Deck A holds drums and bass. Deck B holds chords and an arpeggio. Each channel has three controls beyond its on/off key:
+1. Start the decks. Deck A holds drums and bass. Deck B holds chords and an arpeggio. Each channel has a level fader and controls for its part:
 
    - **Part** chooses what that layer actually plays. Bass offers Roots, Octave bounce, Walking, Offbeat push and Driving eighths. Chords offer Sustained pad, Backbeat stabs, Eighth pulse and Offbeat skank. The arpeggio offers Up & down, Climbing, Falling, Wide leaps and Pedal tone.
+   - **Voice** changes the bass sound.
    - **Rate** sets how often the arpeggio moves: one, two or four notes per beat.
    - **Density** thins a part out. At lower settings notes are dropped in a fixed pattern, so a thinned part repeats the same way each time around rather than flickering at random. On the drums the kick and snare always stay, so the pulse survives.
 
    **Transpose** in the centre mixer moves bass, chords and arpeggio together, up or down an octave. The crossfader and low-pass filter work across both decks.
-2. The four scenes recall a whole arrangement, not just which layers are on. **Intro** thins the drums and slows the arpeggio to one note per beat, **Groove** adds backbeat stabs, **Lift** drives the bass in eighths and runs the arpeggio at four notes per beat, and **Break** drops the rhythm section. Change any control afterwards and the scene button clears, showing you have moved off it.
+2. Open **Deck A → Edit drums & bass**. Use the Drums and Bass grids to write a rhythm for the active scene. Bass steps follow the chord in each bar. **Copy Practice beat** brings in a snapshot of your Practice drum grid. Under **Genre templates**, choose a groove and load its drums, its suggested bass part, or both. The mixer tempo and four-bar chord loop are shared across scenes.
 3. Pick a live instrument. Play the lower white keys with **Q W E R T Y U** (C3–B3) and their black keys with **2 3 5 6 7**. For the higher register, use **Z X C V B N M ,** (C4–C5) and **A S D F G** for the black keys. Hold **Q + E + T** for a C-major chord while playing a melody on the higher row. **[** and **]** shift both registers down or up one octave. Use **Shift + 1–9** or numeric keypad **1–9** for drum hits. The same piano layout also works on the overview and in the Practice room.
-4. Set one chord per bar under **Write the chord loop**. To change the drums, open **Practice room → Beat grid**. In 4/4 you can choose 8, 16, 32, or 64 steps. Patterns in 3/4, 6/8, and 12/8 use lengths that fit those meters.
+4. Set one chord per bar under **Write the chord loop**. Use **Loop length** in Deck A to choose 8, 16, 32, or 64 steps in 4/4. Templates in 3/4, 6/8, and 12/8 use lengths that fit those meters.
 5. Use **Record take** and **Finish take** to capture up to three minutes. Listen back, then save the WAV before closing the tab. For GarageBand, drag the WAV into an audio track or drag an exported beat MIDI into the Tracks area and choose a drum kit. Set the project meter and tempo to match the template.
 
-**Template MIDI** exports the selected original. **Beat MIDI** exports your current grid, including the selected length, swing, tempo and meter. **Undo load** restores the preceding drum pattern.
+**Template MIDI** exports the selected original. In the Practice room, **Beat MIDI** exports your current grid, including the selected length, swing, tempo and meter. **Undo rhythm edit** restores the last rhythm edit in the active Freestyle scene.
 
 ## Files
 
