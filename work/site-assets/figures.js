@@ -215,3 +215,31 @@ function drawFigure(spec){
  const kinds={keys:fKeys,grid:fGrid,timeline:fTimeline,contour:fContour,meters:fMeters};
  return Object.hasOwn(kinds,spec.kind)?kinds[spec.kind](spec):'';
 }
+
+/* -------------------------------------------------------------- thumbnails */
+// A lesson card is about 400×112, so the figure's own type would come out at
+// seven pixels. The card therefore shows the same drawing with every label
+// removed and the name gutter closed up: the shapes still identify the lesson,
+// and the card's heading carries the words.
+const FIG_TINT={keys:'keys',grid:'rhythm',timeline:'arrange',contour:'wave',meters:'wave'};
+function thumbSpec(f){
+ const s={...f,labels:false,alt:'',caption:''};
+ delete s.spans; delete s.marks;
+ if(['grid','timeline','meters'].includes(s.kind))s.laneWidth=6;
+ if(s.sections)s.sections=s.sections.map(x=>({...x,sub:null}));
+ if(s.lanes)s.lanes=s.lanes.map(l=>({...l,text:null,spans:l.spans&&l.spans.map(sp=>({...sp,label:null}))}));
+ if(s.rows)s.rows=s.rows.map(r=>({...r,label:null,note:null}));
+ if(s.mark)s.mark=Object.fromEntries(Object.entries(s.mark).map(([k,v])=>[k,{...v,text:null}]));
+ if(Array.isArray(s.bars))s.bars=s.bars.map(b=>({...b,chord:null,bar:null}));
+ return s;
+}
+function figureThumb(spec){
+ const svg=(drawFigure(thumbSpec(spec)).match(/<svg[\s\S]*<\/svg>/)||[''])[0];
+ return svg
+  .replace(/<text[\s\S]*?<\/text>/g,'')            // no type at this size
+  .replace(/<rect [^>]*fill="#f0f3e9"\/>/,'')      // let the card's tint show through
+  .replace(/ style="[^"]*"/,'')
+  .replace(/ aria-label="[^"]*"/,'')
+  .replace('role="img"','aria-hidden="true"')
+  .replace('xMidYMid meet','xMidYMid meet');   // fit whole, never crop
+}

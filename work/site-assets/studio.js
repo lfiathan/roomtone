@@ -22,8 +22,9 @@ function heading(title,desc,meta=''){return `<div class="page-head">${meta?`<div
 function progress(){return `<div class="progressbox"><div class="progressbar"><i style="width:${done.size/course.length*100}%"></i></div><span>${done.size} / ${course.length} complete</span></div>`;}
 function card(i,home=false){
  const l=course[i];
- const captions={rhythm:'Rhythm grid',keys:'Keyboard map',scale:'Scale degrees',wave:'Melodic contour',arrange:'Track arrangement'};
- return `<a class="card${home?' home-card':''}" href="#lesson/${i+1}"><div class="art ${l.art}"><canvas aria-hidden="true" data-art="${l.art}"></canvas><span class="art-caption">${captions[l.art]}</span></div><div class="card-info"><div class="card-meta"><span>Lesson ${num(i+1)}</span><span>${done.has(i)?'✓ Done':l.time+' min'}</span></div><h3>${l.title}</h3><p>${l.short}</p><div class="card-foot"><span>${done.has(i)?'Revisit lesson':'Open lesson'}</span><span class="card-arrow" aria-hidden="true">↗</span></div></div></a>`;
+ // The card shows this lesson's own figure, stripped of type — so no two cards
+ // look alike and the picture matches what is actually inside.
+ return `<a class="card${home?' home-card':''}" href="#lesson/${i+1}"><div class="art ${FIG_TINT[l.fig.kind]}" data-card-art="${l.fig.kind}">${figureThumb(l.fig)}<span class="art-caption">${esc(l.tag)}</span></div><div class="card-info"><div class="card-meta"><span>Lesson ${num(i+1)}</span><span>${done.has(i)?'✓ Done':l.time+' min'}</span></div><h3>${l.title}</h3><p>${l.short}</p><div class="card-foot"><span>${done.has(i)?'Revisit lesson':'Open lesson'}</span><span class="card-arrow" aria-hidden="true">↗</span></div></div></a>`;
 }
 function synth(){return `<div class="instrument-stage"><div class="synth" aria-label="Playable pocket synthesizer"><div class="machine-top"><div><span class="machine-name">Roomtone</span> <span class="machine-micro">Pocket keys</span></div><div class="speaker" aria-hidden="true"></div></div><div class="machine-controls"><div class="display"><span id="synth-readout">C MAJOR</span><svg viewBox="0 0 100 16" preserveAspectRatio="none" aria-hidden="true"><path d="M0 8 Q5 -3 10 8 T20 8 T30 8 T40 8 T50 8 T60 8 T70 8 T80 8 T90 8 T100 8" fill="none" stroke="#c9daa3" stroke-width="1"/></svg></div><div class="pads" aria-label="Chord pads">${Object.keys(harmony).map(c=>`<button data-chord="${c}" aria-label="Play ${c} chord">${c}</button>`).join('')}</div><label class="volume"><span class="machine-micro">Volume</span><input data-volume type="range" min="0" max="100" value="${Math.round(StudioAudio.volume*100)}"></label></div>${keyboard(true)}<div class="synth-legend"><span><i class="led"></i> Ready to play</span><span>Q row low · Z row high · [ ] octave</span></div></div></div>`;}
 function home(){
@@ -60,27 +61,6 @@ function project(){
 }
 function reference(){return bread('Cheat sheet')+heading('Music cheat sheet','A desk reference for the notes, patterns and recording controls you’ll use while writing a song.')+`<div class="page-actions"><a class="btn" href="music-cheat-sheet.pdf" download>↓ Download printable PDF</a></div><div class="ref-grid">${references.map(b=>`<article class="box"><h2>${b.title}</h2>${table(b.cols,b.rows)}</article>`).join('')}</div>`;}
 function further(){return bread('Sources & further study')+heading('Sources & further study','The first-song course focuses on beat-based songwriting in the twelve-tone system. Follow these paths as your compositions grow.')+`<div class="layout"><section class="panel"><h2>Reference shelf</h2><ul class="source-list">${sources.map(([t,org,u])=>`<li><a href="${u}" target="_blank" rel="noopener">${esc(t)} ↗</a> <small>· ${org}</small></li>`).join('')}</ul><p class="compact">The lessons, synthesized performances and Window Seat arrangement were created for this workbook. External reference pages need an internet connection.</p></section><section class="aside"><h2>What to study next</h2><ul><li><b>Notation.</b> Read treble and bass clefs, identify rests, and notate the four-bar hook. Start with the staff lessons on the reference shelf.</li><li><b>Harmony.</b> Try seventh chords, secondary dominants and modulation. Compare G7 → C with D7 → G → C.</li><li><b>Groove.</b> Write a second song in 3/4 or 6/8. Try swing, alternating long and short subdivisions.</li><li><b>Production.</b> Compare automation, double-tracking and reverb on a single phrase, one adjustment at a time.</li></ul></section></div>`;}
-function drawCards(){
- $$('[data-art]').forEach(canvas=>{
-  const g=canvas.getContext('2d');canvas.width=660;canvas.height=220;const kind=canvas.dataset.art;
-  g.lineWidth=1;g.strokeStyle='#294c3516';
-  for(let x=0;x<660;x+=26){g.beginPath();g.moveTo(x,0);g.lineTo(x,220);g.stroke();}
-  for(let y=0;y<220;y+=25){g.beginPath();g.moveTo(0,y);g.lineTo(660,y);g.stroke();}
-  if(kind==='rhythm'||kind==='arrange'){
-   g.translate(125,65);g.transform(1,-0.15,0.24,1,0,0);
-   const pat=kind==='rhythm'?[[1,0,0,0,1,0,0,0],[0,0,1,0,0,0,1,0],[1,1,1,1,1,1,1,1]]:[[1,1,1,1,1,1,1,1],[0,0,1,1,1,1,0,0],[0,0,0,0,1,1,0,0]];
-   pat.forEach((r,i)=>r.forEach((v,j)=>{g.fillStyle=v?['#3b664d','#9aac85','#63846b'][i]:'#c3d2b9';g.strokeStyle='#66846b';g.lineWidth=1.7;g.beginPath();g.roundRect(j*48,i*37,38,25,3);g.fill();g.stroke();}));
-  }else if(kind==='keys'){
-   g.translate(125,58);g.transform(1,-0.18,0.34,1,0,0);
-   for(let i=0;i<9;i++){g.fillStyle='#f8ead1';g.strokeStyle='#9b7956';g.lineWidth=1.5;g.beginPath();g.roundRect(i*44,0,42,125,3);g.fill();g.stroke();}
-   [1,2,4,5,6,8].forEach(i=>{g.fillStyle='#3c4b3d';g.fillRect(i*44-12,-1,23,76);g.fillStyle='#64705a';g.fillRect(i*44-10,65,18,5);});
-  }else{
-   const lineY=x=>170-x*0.16;g.lineWidth=1.6;g.strokeStyle='#70969b';
-   for(let k=0;k<5;k++){g.beginPath();g.moveTo(70,lineY(70)+k*13-50);g.lineTo(620,lineY(620)+k*13-50);g.stroke();}
-   const degree=kind==='scale'?[0,1,2,3,4,5,6,7]:[0,2,3,2,2,4,6,5];degree.forEach((v,i)=>{const x=113+i*59,y=lineY(x)+14-v*6.5;g.fillStyle='#355e65';g.beginPath();g.ellipse(x,y,10,7,-0.45,0,2*Math.PI);g.fill();g.fillRect(x+8,y-48,2.3,47);});
-  }
- });
-}
 function render(move=true){
  if(MusicEngine.recording)finishTake();
  releaseKeys();StudioAudio.stop();const raw=location.hash.slice(1)||'home', [page,arg]=raw.split('/');
@@ -90,7 +70,7 @@ function render(move=true){
  main.innerHTML=validLesson?lesson(n-1):Object.hasOwn(views,page)?views[page]():home();
  const title=active==='home'?'Music learning studio':main.querySelector('h1')?.textContent||'Overview';document.title=title+' | Roomtone';
  $$('nav a').forEach(a=>{const yes=a.hash==='#'+active;a.toggleAttribute('aria-current',yes);if(yes)a.setAttribute('aria-current','page');});
- $('.project-menu').classList.toggle('active',page==='project');drawCards();
+ $('.project-menu').classList.toggle('active',page==='project');
  if(move){window.scrollTo(0,0);main.focus({preventScroll:true});}
 }
 function reveal(key,notes){

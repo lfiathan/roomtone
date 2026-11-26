@@ -97,6 +97,24 @@
   await goto('lessons');
   check('the index counts it',/1 \/ 12/.test($('.progressbox span').textContent));
   check('the index still draws a card per lesson',$$('.cards .card').length===12);
+
+  // --- every card shows its own lesson's figure ---------------------------
+  const arts=$$('.cards .art');
+  check('every card draws art',arts.length===12&&arts.every(a=>!!a.querySelector('svg')));
+  check('no card still uses the old canvas',!$('.cards canvas')&&!$('[data-art]'));
+  check('each card art matches its lesson figure',
+   arts.every((a,i)=>a.dataset.cardArt===course[i].fig.kind));
+  check('twelve different pictures',new Set(arts.map(a=>a.querySelector('svg').innerHTML)).size===12);
+  check('card art carries no unreadable type',arts.every(a=>!a.querySelector('svg text')));
+  check('card art is hidden from screen readers',arts.every(a=>a.querySelector('svg').getAttribute('aria-hidden')==='true'));
+  check('card art fits rather than crops',arts.every(a=>a.querySelector('svg').getAttribute('preserveAspectRatio')==='xMidYMid meet'));
+  check('every card is captioned with its own tag',
+   arts.every((a,i)=>a.querySelector('.art-caption').textContent===course[i].tag));
+  check('the tags are all different',new Set(course.map(l=>l.tag)).size===12);
+  const box0=arts[0].getBoundingClientRect(), svg0=arts[0].querySelector('svg').getBoundingClientRect();
+  check('card art sits inside its tile',svg0.width<=box0.width&&svg0.height<=box0.height);
+  await goto('home');
+  check('the overview cards draw art too',$$('.home-card .art svg').length===3);
   await goto('lesson/1');$('[data-complete]').click();await delay(30);
   check('it can be unchecked',!done.has(0));
 

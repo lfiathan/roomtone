@@ -12,7 +12,7 @@
 const chapters = ['Find your footing', 'Write a musical idea', 'Build the arrangement', 'Record and finish'];
 const course = [
 {
- title:'Rhythm & time', short:'Feel the pulse, count a bar, and build your first backbeat.', time:12, section:0, art:'rhythm', lab:'beat',
+ title:'Rhythm & time', short:'Feel the pulse, count a bar, and build your first backbeat.', time:12, section:0, tag:'Backbeat', lab:'beat',
  idea:'A beat is a steady pulse, like footsteps. Walking doesn’t speed up or slow down, and neither does the beat. A <b>bar</b> is a group of beats — usually four — that repeats, so you always know where the pattern starts over. Rhythm is whatever you clap on top of those steady steps.',
  fig:{kind:'grid',beats:4,div:2,cw:42,
   lanes:[{name:'Hi-hat',tone:'blue',on:[0,1,2,3,4,5,6,7]},{name:'Snare',tone:'orange',on:[2,6]},{name:'Kick',tone:'green',on:[0,4]}],
@@ -26,7 +26,7 @@ const course = [
  gb:'Set a project to 4/4 and 96 BPM. Turn on the metronome and record four bars of claps or single notes. Listen to where your final clap lands.',
  question:'How many eighth notes fill one bar of 4/4?', choices:['Four','Eight','Sixteen'], correct:1, why:'Each of the four quarter-note beats splits into two eighth notes. Four pairs give eight.', test:'Count four bars aloud while you clap on 2 and 4 without losing beat 1.'
 },{
- title:'Notes & intervals', short:'Find any C on a keyboard and hear the space between two notes.', time:15, section:0, art:'keys', lab:'keys',
+ title:'Notes & intervals', short:'Find any C on a keyboard and hear the space between two notes.', time:15, section:0, tag:'Finding C', lab:'keys',
  idea:'A keyboard looks like a wall of keys, but it is the same twelve keys repeating. The black keys are your landmarks: they come in a group of two, then a group of three, over and over. C is always the white key immediately to the left of a group of two.',
  fig:{kind:'keys',low:48,high:72,kw:30,groups:true,labels:'c',
   mark:{48:{tone:'orange',text:'C'},60:{tone:'orange',text:'C'},72:{tone:'orange',text:'C'}},
@@ -44,7 +44,7 @@ const course = [
  gb:'On a software piano, record C, E, G and the next C. Open its piano roll. Each row is one semitone, and higher notes appear higher on the grid.',
  question:'Which pair of white keys is one semitone apart?',choices:['C and D','F and G','E and F'],correct:2,why:'E and F are next-door keys with no black key between them. B and the next C are the other white-key semitone.',test:'Find a C without using a label, then sing and play a fifth above it.'
 },{
- title:'Scales & keys',short:'Give your melody a home note and a set of pitches to explore.',time:15,section:0,art:'scale',lab:'keys',
+ title:'Scales & keys',short:'Give your melody a home note and a set of pitches to explore.',time:15,section:0,tag:'Scale steps',lab:'keys',
  idea:'Pick one note to be home. A <b>scale</b> is the set of notes you travel around that home, written out in order from it and back to it. Starting and ending on home is most of what makes a tune sound settled rather than unfinished.',
  fig:{kind:'keys',low:60,high:72,kw:36,
   mark:{60:{tone:'green',text:'1'},62:{tone:'green',text:'2'},64:{tone:'green',text:'3'},65:{tone:'green',text:'4'},67:{tone:'green',text:'5'},69:{tone:'green',text:'6'},71:{tone:'green',text:'7'},72:{tone:'green',text:'8'}},
@@ -62,7 +62,7 @@ const course = [
  gb:'Record a sustained C chord. On another track, play C D E G, pause, then return to C. Changing the project key signature alone will not write a melody for you.',
  question:'Which note belongs to G major?',choices:['F♯','F natural','G♭ instead of G'],correct:0,why:'The seventh degree has to sit a half step below the tonic, so it is F♯.',test:'Build G major from the step pattern and identify its tonic by ear.'
 },{
- title:'Chords & voicings',short:'Stack thirds, change one note, and hear a chord change color.',time:18,section:1,art:'keys',lab:'keys',
+ title:'Chords & voicings',short:'Stack thirds, change one note, and hear a chord change color.',time:18,section:1,tag:'Stacked thirds',lab:'keys',
  idea:'Play three notes together and you get a <b>chord</b>. The usual way to build one is to take a note, skip the next, take the one after, skip again, take the one after that. The three notes end up evenly spread, and which three you choose decides whether the chord sounds bright or sad.',
  fig:{kind:'keys',low:60,high:72,kw:36,
   mark:{60:{tone:'green',text:'C'},62:{tone:'pale',text:'·'},64:{tone:'green',text:'E'},63:{tone:'rust',text:'E♭'},65:{tone:'pale',text:'·'},67:{tone:'green',text:'G'}},
@@ -81,7 +81,7 @@ const course = [
  gb:'Enter a C triad in a software instrument region. Duplicate the region, then move just the E down one row in the piano roll to compare the two colors.',
  question:'E–G–C, with E lowest, is which chord?',choices:['E minor','C major in first inversion','G major'],correct:1,why:'The three pitches still spell C–E–G. Putting the third, E, at the bottom makes it the first inversion.',test:'Build a minor triad from a root and explain which pitch you would raise to make it major.'
 },{
- title:'Chord progressions',short:'Turn four chords into a loop and use a cadence to finish.',time:18,section:1,art:'scale',lab:'keys',
+ title:'Chord progressions',short:'Turn four chords into a loop and use a cadence to finish.',time:18,section:1,tag:'Four chords',lab:'keys',
  idea:'Songs rarely sit on one chord. A <b>progression</b> is the order you move through a few of them, usually one per bar, looping back round to the start. A handful of the same orders turn up in an enormous number of songs.',
  fig:{kind:'timeline',bars:4,bw:108,laneWidth:74,
   sections:[{from:1,to:1,name:'C',sub:'I',tone:'soft'},{from:2,to:2,name:'G',sub:'V',tone:'soft'},{from:3,to:3,name:'Am',sub:'vi',tone:'soft'},{from:4,to:4,name:'F',sub:'IV',tone:'soft'}],
@@ -100,7 +100,7 @@ const course = [
  gb:'Record the four-bar loop once. Trim the region edges to bar lines and loop it. Make a separate copy if you want to edit a different ending independently.',
  question:'What is I–V–vi–IV in G major?',choices:['G–C–D–Em','G–D–Em–C','G–Dm–E–C'],correct:1,why:'Take degrees 1, 5, 6 and 4 in G major. The sixth-degree triad is minor, giving Em.',test:'Play the loop in two keys and create an ending that settles on the tonic.'
 },{
- title:'Melody & motifs',short:'Write a short musical phrase somebody could sing back.',time:20,section:1,art:'wave',lab:'keys',
+ title:'Melody & motifs',short:'Write a short musical phrase somebody could sing back.',time:20,section:1,tag:'Hook contour',lab:'keys',
  idea:'A <b>motif</b> is a short shape — a few notes in a particular rhythm — brief enough to remember after hearing it once. A melody is what happens when you repeat that shape, alter a part of it, and leave a gap for the listener to breathe.',
  fig:{kind:'contour',beatW:40,h:200,
   bars:[{bar:9,chord:'C',notes:[{midi:64,beats:1},{midi:67,beats:1},{midi:69,beats:1},{midi:67,beats:1}]},
@@ -116,7 +116,7 @@ const course = [
  gb:'Choose a lead sound that stands apart from the chord instrument. Record a hummed take or a software-instrument line. Keep one take for comparison.',
  question:'How many beats does D5 take in bar 10?',choices:['One','Two','Four'],correct:1,why:'G and B take one beat each, which leaves two beats of the bar for the held D.',test:'Sing a two-bar hook from memory and point to one repeat and one variation.'
 },{
- title:'Drums & bass',short:'Give the kick, snare and bass distinct jobs in the groove.',time:18,section:2,art:'rhythm',lab:'beat',
+ title:'Drums & bass',short:'Give the kick, snare and bass distinct jobs in the groove.',time:18,section:2,tag:'Groove layers',lab:'beat',
  idea:'The kick, the snare, the hi-hat and the bass are not four copies of one rhythm. Each has a job. The kick marks the floor of the bar, the snare answers it, the hi-hat keeps the small subdivisions ticking, and the bass ties all of that to the chord underneath.',
  fig:{kind:'grid',beats:4,div:2,cw:42,
   lanes:[{name:'Hi-hat',tone:'blue',on:[0,1,2,3,4,5,6,7]},{name:'Snare',tone:'orange',on:[2,6]},{name:'Kick',tone:'green',on:[0,4]},{name:'Bass',tone:'slate',on:[0,4],text:{0:'C',4:'C'}}],
@@ -133,7 +133,7 @@ const course = [
  gb:'Use a software drum kit or a Drummer track. Add a separate bass track. Solo the pair and check whether the start of each bass note supports the kick.',
  question:'How can you make a hook busier while keeping its tempo?',choices:['Double the hi-hat subdivision','Double the BPM only','Change the key signature'],correct:0,why:'Eighth-note hats put more events in the bar while the quarter-note pulse stays exactly where it was.',test:'Build two grooves at the same tempo and explain one rhythm change you hear.'
 },{
- title:'Lyrics & phrasing',short:'Fit a sung line to the beat or shape an instrumental hook.',time:20,section:2,art:'wave',lab:'beat',
+ title:'Lyrics & phrasing',short:'Fit a sung line to the beat or shape an instrumental hook.',time:20,section:2,tag:'Word stress',lab:'beat',
  idea:'Speech already has a rhythm. Say any sentence out loud and some syllables land harder than others without you deciding to do it. Writing a line that sings well is mostly a matter of putting those strong syllables where the music is already strong.',
  fig:{kind:'grid',beats:4,div:2,cw:42,laneWidth:104,
   lanes:[{name:'Stressed',tone:'orange',on:[0,4],text:{0:'RAIN',4:'WIN'}},{name:'Unstressed',tone:'slate',on:[2,3,6],text:{2:'on',3:'the',6:'dow'}}],
@@ -147,7 +147,7 @@ const course = [
  gb:'Use Audio Recorder or a microphone track for a scratch vocal. A rough recording captures the rhythm of your words before you commit to a melody.',
  question:'Which step helps a line sound natural when sung?',choices:['Give every syllable equal stress','Always rhyme on beat one','Put the naturally stressed syllables on the strong beats'],correct:2,why:'The rhythm of the music should reinforce the accents the words already have, not argue with them.',test:'Record one line with clear word stress and one deliberate breath.'
 },{
- title:'Song form & arrangement',short:'Turn a repeating loop into sections with a beginning and ending.',time:20,section:2,art:'arrange',lab:'project',
+ title:'Song form & arrangement',short:'Turn a repeating loop into sections with a beginning and ending.',time:20,section:2,tag:'Sixteen bars',lab:'project',
  idea:'A loop that never changes stops holding attention after about thirty seconds. <b>Form</b> is the order of the sections — intro, verse, hook, outro. <b>Arrangement</b> is which instruments play in each one. A section feels bigger mostly because more parts have arrived, not because anything got louder.',
  fig:{kind:'timeline',bars:16,bw:31,laneWidth:74,
   sections:[{from:1,to:4,name:'Intro',sub:'0:00',tone:'soft'},{from:5,to:8,name:'Verse',sub:'0:10',tone:'soft'},{from:9,to:12,name:'Hook',sub:'0:20',tone:'orange'},{from:13,to:16,name:'Outro',sub:'0:30',tone:'soft'}],
@@ -165,7 +165,7 @@ const course = [
  gb:'On Mac, arrange independent regions across the ruler. On iPhone or iPad, set the song section length to 16 bars or add four sections of four bars.',
  question:'At this tempo, when does bar 9 begin?',choices:['0:10','0:20','0:40'],correct:1,why:'Eight completed bars × four beats × 0.625 seconds = 20 seconds.',test:'Identify all four sections by ear and explain how your arrangement marks the hook.'
 },{
- title:'Recording & editing',short:'Capture a take, trim a region, and repair a timing slip.',time:22,section:3,art:'wave',lab:'garageband',
+ title:'Recording & editing',short:'Capture a take, trim a region, and repair a timing slip.',time:22,section:3,tag:'Regions & edits',lab:'garageband',
  idea:'What you record lands on the timeline as a block you can move, shorten or cut in half. Editing is mostly that — sliding a block somewhere else, trimming its edges, or splitting it and throwing away the part you don’t want.',
  fig:{kind:'timeline',bars:8,bw:58,laneWidth:108,
   lanes:[{name:'Piano · MIDI',spans:[{from:1,to:4,label:'one note can be nudged',tone:'green'}]},
@@ -180,7 +180,7 @@ const course = [
  gb:'Follow the Record and Edit steps in the GarageBand guide for your device. Use headphones if an open microphone picks up the backing track.',
  question:'Which take lets you edit a single wrong pitch in the piano roll?',choices:['A recording from a microphone','A software-instrument MIDI region','An exported stereo mix'],correct:1,why:'Only MIDI stores separate note events, which is what the piano roll puts on screen.',test:'Save an editable session containing both an original take and a corrected region.'
 },{
- title:'Mixing & space',short:'Make the lead audible through level, placement, and tone.',time:20,section:3,art:'arrange',lab:'garageband',
+ title:'Mixing & space',short:'Make the lead audible through level, placement, and tone.',time:20,section:3,tag:'Mix levels',lab:'garageband',
  idea:'Mixing is deciding what a listener hears first. The first fix is almost never an effect — it is turning something down. When the lead disappears, the problem is usually whatever is sitting on top of it, not the lead itself.',
  fig:{kind:'meters',track:290,
   rows:[{name:'Lead',value:74,tone:'orange',label:'the part you want heard'},
@@ -196,7 +196,7 @@ const course = [
  gb:'Use track volume and pan first. On Mac open Smart Controls for EQ and effects. On mobile use Track Controls and Plug-ins & EQ. Check the master output during the hook.',
  question:'The lead is buried under the piano. What is a useful first move?',choices:['Raise every track','Add more reverb','Lower the piano level'],correct:2,why:'A relative-level change makes space immediately and tells you whether that part really was the conflict.',test:'Hear the hook clearly at low volume and play the loudest section without clipping.'
 },{
- title:'Export & revise',short:'Finish an editable project and a stereo file you can share.',time:12,section:3,art:'arrange',lab:'garageband',
+ title:'Export & revise',short:'Finish an editable project and a stereo file you can share.',time:12,section:3,tag:'Project vs export',lab:'garageband',
  idea:'Finishing gives you two different things and you want to keep both. The <b>project</b> is the version you can still take apart, with every track and every edit intact. The <b>export</b> is one flat stereo file you can send to somebody or play in the car.',
  fig:{kind:'timeline',bars:18,bw:29,laneWidth:96,
   lanes:[{name:'Chords',spans:[{from:1,to:16,tone:'green'}]},

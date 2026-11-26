@@ -125,3 +125,10 @@ fig:{kind:'grid', beats:4, div:2,
 `drawFigure` dispatches on `kind`. Every figure carries an `alt` for screen
 readers and a `caption` shown under it, and `check-lessons.js` fails if either
 is missing or if a figure stops marking the notes or hits its caption claims.
+
+The lesson cards reuse the same drawings. `figureThumb` re-renders a figure with
+the labels dropped and the name gutter closed up, because a card tile is about
+400x112 and the figure's own type would land at seven pixels. The shapes still
+tell the twelve lessons apart; the card heading carries the words. There is no
+second set of artwork to keep in step — edit a lesson's figure and its card
+follows.
