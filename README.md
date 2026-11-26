@@ -128,7 +128,7 @@ The course is three chapters, one source file each, assembled in `lessons.js`:
 | File | Chapter | Lessons |
 |---|---|---|
 | `course-theory.js` | Music theory | 11, in modules Time / Pitch / Harmony / Melody |
-| `course-writing.js` | Writing a song | 3, in Groove / Words / Form |
+| `course-writing.js` | Writing a song | 4, in Groove / Words / Form |
 | `course-studio.js` | The studio | 4, in Recording / Editing / Mixing / Finishing |
 
 Theory is deliberately complete and comes first: nothing in chapters 2 and 3
@@ -192,7 +192,7 @@ is missing or if a figure stops marking the notes or hits its caption claims.
 The lesson cards reuse the same drawings. `figureThumb` re-renders a figure with
 the labels dropped and the name gutter closed up, because a card tile is about
 400x128 and the figure's own type would land at seven pixels. The shapes still
-tell the eighteen lessons apart; the card heading carries the words. A card
+tell the nineteen lessons apart; the card heading carries the words. A card
 takes the first figure of its lesson, derived once in `lessons.js`, so there is
 no second set of artwork to keep in step and no way for a card to illustrate a
 lesson with a picture that lesson does not contain.

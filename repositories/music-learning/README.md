@@ -11,10 +11,10 @@ Open **index.html** in Safari, Chrome, Firefox, or Edge. The lessons, instrument
 
 ## The three chapters
 
-The course is eighteen lessons in three chapters, and they are separated by subject so the topic does not jump around:
+The course is nineteen lessons in three chapters, and they are separated by subject so the topic does not jump around:
 
 1. **Music theory** — eleven lessons on how music is put together: beats and bars, note lengths, tempo and time signature, the twelve notes, intervals, scales, keys and minor, triads, inversions, progressions and cadences, melody. No microphones and no software.
-2. **Writing a song** — three lessons on turning that into parts: drums and bass, phrasing and lyrics, song form and arrangement.
+2. **Writing a song** — four lessons on turning that into parts: drums and bass, phrasing and lyrics, the sections a song is built from (verse, pre-chorus, chorus, bridge and the rest), and how to arrange them.
 3. **The studio** — four lessons on the craft after the song exists: recording a take, editing regions and timing, mixing, and exporting.
 
 Theory comes first and comes complete. Nothing in chapters 2 and 3 uses a musical term that chapter 1 has not already defined.

@@ -20,10 +20,10 @@
   check('three chapters',chapters.length===3);
   check('the chapters are theory, writing and the studio',
    chapters.map(c=>c.name).join('|')==='Music theory|Writing a song|The studio');
-  check('eighteen lessons',course.length===18);
+  check('nineteen lessons',course.length===19);
   check('lessons are stored in chapter order',course.every((l,i)=>!i||l.chapter>=course[i-1].chapter));
   check('theory is the longest chapter',chapterLessons(0).length===11);
-  check('chapter 2 and chapter 3 are present',chapterLessons(1).length===3&&chapterLessons(2).length===4);
+  check('chapter 2 and chapter 3 are present',chapterLessons(1).length===4&&chapterLessons(2).length===4);
   check('every lesson names a module its chapter declares',
    course.every(l=>chapters[l.chapter].modules.includes(l.module)));
   check('every declared module has at least one lesson',
@@ -92,7 +92,7 @@
   check('each chapter card lists its modules',
    $$('.chcard').every((c,j)=>c.querySelectorAll('.tag-chip').length===chapters[j].modules.length));
   check('each chapter card counts its own lessons',
-   $$('.chcard').map(c=>c.querySelector('.chcard-foot span').textContent.trim()).join('|')==='0 / 11 done|0 / 3 done|0 / 4 done');
+   $$('.chcard').map(c=>c.querySelector('.chcard-foot span').textContent.trim()).join('|')==='0 / 11 done|0 / 4 done|0 / 4 done');
   for(let j=0;j<3;j++){
    await goto('chapter/'+(j+1));
    check(`chapter ${j+1} names itself`,$('h1').textContent===chapters[j].name);
@@ -169,16 +169,26 @@
   check('lesson 12 puts the bass on the kick positions',
    [...$$('.figure')[0].querySelectorAll('[data-cell][data-on]')].filter(c=>/^Bass/.test(c.dataset.cell)).length===3);
   await goto('lesson/14');
-  check('lesson 14 lays out four sections over sixteen bars',$$('.figure [data-span]').length===4);
-  check('lesson 14 marks where the hook enters',
-   [...$$('.figure text')].some(t=>/hook enters/.test(t.textContent)));
+  const sectionNames=[...$$('.figure')[0].querySelectorAll('text')]
+   .filter(t=>/^(Intro|Verse|Pre|Chorus|Bridge|Outro)$/.test(t.textContent)).map(t=>t.textContent);
+  check('lesson 14 lays out the ten sections of a pop song',sectionNames.length===10);
+  check('lesson 14 shows the chorus three times and the bridge once',
+   sectionNames.filter(n=>n==='Chorus').length===3&&sectionNames.filter(n=>n==='Bridge').length===1);
+  check('lesson 14 says the bridge happens once',
+   [...$$('.figure text')].some(t=>/happens once/.test(t.textContent)));
+  check('lesson 14 draws AABA as four eight-bar sections',
+   $$('.figure')[1].querySelectorAll('[data-span]').length===4);
   await goto('lesson/15');
-  check('lesson 15 contrasts three input levels',$$('.figure [data-level]').length===3);
-  await goto('lesson/17');
-  check('lesson 17 shows four faders and one that moved',
-   $$('.figure [data-level]').length===4&&$$('.figure [data-was]').length===1);
+  check('lesson 15 lays out four sections over sixteen bars',$$('.figure [data-span]').length===4);
+  check('lesson 15 marks where the hook enters',
+   [...$$('.figure text')].some(t=>/hook enters/.test(t.textContent)));
+  await goto('lesson/16');
+  check('lesson 16 contrasts three input levels',$$('.figure [data-level]').length===3);
   await goto('lesson/18');
-  check('lesson 18 shows four tracks summing to one file',$$('.figure')[0].querySelectorAll('[data-span]').length===5);
+  check('lesson 18 shows four faders and one that moved',
+   $$('.figure [data-level]').length===4&&$$('.figure [data-was]').length===1);
+  await goto('lesson/19');
+  check('lesson 19 shows four tracks summing to one file',$$('.figure')[0].querySelectorAll('[data-span]').length===5);
 
   // --- the quiz still works where it now sits -----------------------------
   await goto('lesson/1');
@@ -196,7 +206,7 @@
   check('a finished lesson is remembered',
    done.has(0)&&JSON.parse(localStorage.getItem('roomtone.v1.lessons')).includes(0));
   await goto('lessons');
-  check('the overall count moves',/1 \/ 18/.test($('.progressbox span').textContent));
+  check('the overall count moves',/1 \/ 19/.test($('.progressbox span').textContent));
   check('the chapter card counts it too',/1 \/ 11/.test($('.chcard .chcard-foot span').textContent));
   await goto('lesson/2');
   check('the rail ticks off what is done',!!$('.rail-item.got'));

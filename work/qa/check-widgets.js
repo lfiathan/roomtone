@@ -176,7 +176,7 @@
    kind('contour').querySelectorAll('[data-wcell][aria-pressed=true]').length===1);
 
   // --- arrange -----------------------------------------------------------
-  await goto('lesson/14');
+  await goto('lesson/15');
   look(kind('arrange'));
   check('the arrangement is four layers by four sections',
    kind('arrange').querySelectorAll('[data-wtoggle]').length===16);
@@ -189,7 +189,7 @@
   StudioAudio.stop();await delay(40);
 
   // --- mix ---------------------------------------------------------------
-  await goto('lesson/17');
+  await goto('lesson/18');
   look(kind('mix'));
   check('the mixer has a fader and a pan per track',
    kind('mix').querySelectorAll('[data-wrange^=level]').length===4&&kind('mix').querySelectorAll('[data-wrange^=pan]').length===4);
@@ -204,13 +204,13 @@
   check('reset restores the starting mix',kind('mix').querySelector('[data-wrange=level2]').value==='54');
 
   // --- compare · rhythms and a reverb send -------------------------------
-  await goto('lesson/16');
+  await goto('lesson/17');
   look(kinds('compare')[0]);
   kinds('compare')[0].querySelectorAll('[data-wab]')[0].click();await delay(60);
   check('a comparison can play a rhythm rather than notes',/As played/.test(say()));
   kinds('compare')[0].querySelectorAll('[data-wab]')[2].click();await delay(60);
   check('the fully quantised version is offered too',/[Ff]ull strength/.test(say()));
-  await goto('lesson/17');
+  await goto('lesson/18');
   const space=look(kinds('compare')[1]);
   space.querySelectorAll('[data-wab]')[2].click();await delay(60);
   check('a comparison can route through the space send',/Far away/.test(sayIn(space)));
