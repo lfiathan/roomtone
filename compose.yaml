@@ -1,0 +1,17 @@
+services:
+  # Runs the whole pipeline and writes the artifacts back into the repo.
+  build:
+    build: .
+    volumes:
+      - ./repositories:/app/repositories
+      - ./outputs:/app/outputs
+      - ./work/site-assets:/app/work/site-assets:ro
+      - ./work/site-template.html:/app/work/site-template.html:ro
+
+  # Serves the finished single-file site.
+  site:
+    image: nginx:alpine
+    ports:
+      - "${PORT:-8080}:80"
+    volumes:
+      - ./repositories/music-learning:/usr/share/nginx/html:ro

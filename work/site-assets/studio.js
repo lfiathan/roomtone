@@ -1,0 +1,139 @@
+
+'use strict';
+const main=document.getElementById('content'), $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const num=n=>String(n).padStart(2,'0');
+let storageOK=true;
+function read(k,defaultValue){try{return JSON.parse(localStorage.getItem('roomtone.v1.'+k)??'null')??defaultValue;}catch{return defaultValue;}}
+function save(k,v){try{localStorage.setItem('roomtone.v1.'+k,JSON.stringify(v));}catch{storageOK=false;}}
+let done=new Set((Array.isArray(read('lessons',[]))?read('lessons',[]):[]).filter(i=>Number.isInteger(i)&&i>=0&&i<course.length));
+let device=read('device','Mac')==='Touch'?'Touch':'Mac', bpm=96,scaleKey='C major',wave='triangle',ear=null, clickOn=false;
+const scales={'C major':[60,62,64,65,67,69,71,72],'G major':[67,69,71,72,74,76,78,79],'A natural minor':[69,71,72,74,76,77,79,81]};
+const toolsRoute={beat:['practice/beat','Beat grid'],keys:['practice/keys','Keys & harmony'],project:['project','Song project'],garageband:['garageband','GarageBand guide']};
+const planSteps=['Record the four-bar chord loop.','Add bass roots and a light groove for bars 5–8.','Record the four-bar hook at bar 9.','Create the outro and finish on C.','Balance the hook and export the full song.'];
+let plan=new Set((Array.isArray(read('plan',[]))?read('plan',[]):[]).filter(i=>Number.isInteger(i)&&i>=0&&i<planSteps.length));
+let notebook=String(read('note',''));
+function table(cols,rows){return `<div class="table-wrap"><table><thead><tr>${cols.map(x=>`<th scope="col">${esc(x)}</th>`).join('')}</tr></thead><tbody>${rows.map(r=>`<tr>${r.map(c=>`<td>${esc(c)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;}
+function logo(){return '<span class="bars-logo" aria-hidden="true"><i></i><i></i><i></i><i></i></span>';}
+function button(url,label,cls=''){return `<a class="btn ${cls}" href="#${url}">${label}</a>`;}
+function link(url,label){return `<a class="text-link" href="#${url}">${label} <span aria-hidden="true">→</span></a>`;}
+function bread(label){return `<div class="bread"><a href="#home">Overview</a><span aria-hidden="true">/</span><span>${label}</span></div>`;}
+function heading(title,desc,meta=''){return `<div class="page-head">${meta?`<div class="eyebrow">${meta}</div>`:''}<h1>${title}</h1><p>${desc}</p></div>`;}
+function progress(){return `<div class="progressbox"><div class="progressbar"><i style="width:${done.size/course.length*100}%"></i></div><span>${done.size} / ${course.length} complete</span></div>`;}
+function card(i,home=false){
+ const l=course[i];
+ const captions={rhythm:'Rhythm grid',keys:'Keyboard map',scale:'Scale degrees',wave:'Melodic contour',arrange:'Track arrangement'};
+ return `<a class="card${home?' home-card':''}" href="#lesson/${i+1}"><div class="art ${l.art}"><canvas aria-hidden="true" data-art="${l.art}"></canvas><span class="art-caption">${captions[l.art]}</span></div><div class="card-info"><div class="card-meta"><span>Lesson ${num(i+1)}</span><span>${done.has(i)?'✓ Done':l.time+' min'}</span></div><h3>${l.title}</h3><p>${l.short}</p><div class="card-foot"><span>${done.has(i)?'Revisit lesson':'Open lesson'}</span><span class="card-arrow" aria-hidden="true">↗</span></div></div></a>`;
+}
+function synth(){return `<div class="instrument-stage"><div class="synth" aria-label="Playable pocket synthesizer"><div class="machine-top"><div><span class="machine-name">Roomtone</span> <span class="machine-micro">Pocket keys</span></div><div class="speaker" aria-hidden="true"></div></div><div class="machine-controls"><div class="display"><span id="synth-readout">C MAJOR</span><svg viewBox="0 0 100 16" preserveAspectRatio="none" aria-hidden="true"><path d="M0 8 Q5 -3 10 8 T20 8 T30 8 T40 8 T50 8 T60 8 T70 8 T80 8 T90 8 T100 8" fill="none" stroke="#c9daa3" stroke-width="1"/></svg></div><div class="pads" aria-label="Chord pads">${Object.keys(harmony).map(c=>`<button data-chord="${c}" aria-label="Play ${c} chord">${c}</button>`).join('')}</div><label class="volume"><span class="machine-micro">Volume</span><input data-volume type="range" min="0" max="100" value="${Math.round(StudioAudio.volume*100)}"></label></div>${keyboard(true)}<div class="synth-legend"><span><i class="led"></i> Ready to play</span><span>Q row low · Z row high · [ ] octave</span></div></div></div>`;}
+function home(){
+ const next=course.findIndex((_,i)=>!done.has(i));
+ return `<section class="hero"><div class="hero-copy"><div class="eyebrow">${logo()} The songwriting workbook</div><h1>From the first beat<br>to <em>your first song.</em></h1><p>Learn the building blocks of music, try them by ear, and bring a song to life in GarageBand.</p><div class="actions">${button('lesson/'+(next<0?1:next+1),(done.size&&next>=0?'Continue learning':'Start learning')+' <span aria-hidden="true">→</span>','warm')}<button class="listen" data-song><span class="circle-play" aria-hidden="true">▶</span><span data-song-label>Hear the song</span></button><a class="listen" href="#freestyle">Freestyle studio ↗</a></div></div>${synth()}</section>
+ <section class="section"><div class="sec-head"><div><h2>Your learning path</h2><p>Twelve hands-on lessons, from keeping time to exporting a mix.</p></div>${link('lessons','View all lessons')}</div><div class="cards">${[0,1,2].map(i=>card(i,true)).join('')}</div></section>
+ <section class="section"><div class="sec-head"><h2>On the music stand</h2>${progress()}</div><div class="tools">${[['practice','♬','Practice room','Genre templates, keys and ear training'],['garageband','≋','GarageBand guide','Record on Mac, iPhone or iPad'],['reference','▤','Cheat sheet','Chords, rhythm and recording controls']].map(([u,icon,t,d])=>`<a href="#${u}" class="tool"><span aria-hidden="true" class="tool-icon">${icon}</span><span><b>${t}</b><small>${d}</small></span></a>`).join('')}</div></section>`;
+}
+function staffReference(){const names=['C4','D4','E4','F4','G4','A4','B4','C5'];const notes=names.map((name,i)=>{const x=45+i*48+(i>=4?10:0),y=83-i*5;const stem=i>=6?`<path d="M${x-5} ${y}v28"/>`:`<path d="M${x+5} ${y}v-28"/>`;return `<g fill="#2d4d3b" stroke="#2d4d3b">${!i?`<path d="M${x-11} ${y}h22"/>`:''}<ellipse cx="${x}" cy="${y}" rx="6.5" ry="4.7" transform="rotate(-20 ${x} ${y})"/>${stem}</g><text x="${x}" y="108" text-anchor="middle" fill="#3f5747" font-size="12">${name}</text>`;}).join('');
+return `<section class="panel staff-panel"><h2>Read a treble staff</h2><p>Read from left to right. One step from a line to its neighboring space moves to the next letter name. In treble clef, the bottom line is E4. Middle C (C4) sits on a short ledger line below it.</p><svg role="img" aria-label="Two bars of ascending quarter notes in treble clef, from middle C to C5." viewBox="0 0 445 120">${[33,43,53,63,73].map(y=>`<path d="M12 ${y}h418" stroke="#8a9c89"/>`).join('')}<text x="10" y="68" font-family="Apple Symbols,serif" font-size="52" fill="#355442">𝄞</text><path d="M213 33v40M426 33v40" stroke="#516b56"/>${notes}</svg><p class="compact">The five lines from bottom to top are E G B D F. The spaces are F A C E. Sing the labeled notes in order, then cover the labels and name them again.</p></section>`;}
+
+function lessons(){
+ return bread('Lessons')+heading('Your learning path','Work through one lesson at a time. Each one has a musical idea to hear, a task to play, and a check before you move on.')+progress()+chapters.map((name,j)=>`<section class="chapter"><div class="chapter-title"><span class="unit-no">Unit ${num(j+1)}</span><h2>${name}</h2></div><div class="cards">${course.map((l,i)=>l.section===j?card(i):'').join('')}</div></section>`).join('');
+}
+function lesson(i){
+ const l=course[i], [route,lab]=toolsRoute[l.lab];
+ return `<div class="bread"><a href="#lessons">Lessons</a> / ${chapters[l.section]}</div>`+heading(l.title,l.short,`Lesson ${num(i+1)} of 12 · ${l.time} min`)+`<div class="layout"><div class="stack"><article class="panel"><h2>Get the idea</h2><p>${l.idea}</p><p>${l.worked}</p>${table(l.cols,l.rows)}</article>${i===1?staffReference():''}<section class="panel"><h2>Try it yourself</h2><ol>${l.steps.map(s=>`<li>${s}</li>`).join('')}</ol>${button(route,'Open '+lab+' ↗','ghost')}</section><section class="panel soft"><h2>In GarageBand</h2><p>${l.gb}</p>${link('garageband','Open the device guide')}</section></div><aside class="aside"><div class="micro">Recall check</div><h2>${l.question}</h2><div class="answers">${l.choices.map((c,j)=>`<button data-quiz="${j}" data-lesson="${i}">${esc(c)}</button>`).join('')}</div><p class="result" id="quiz-result" role="status"></p><div class="divider"></div><h3>Before moving on</h3><p>${l.test}</p><label class="check-line"><input type="checkbox" data-complete="${i}" ${done.has(i)?'checked':''}><span>I can do this from memory.</span></label>${progress()}<p class="compact">Next session, repeat the task once before opening your notes.</p></aside></div><div class="lesson-tools">${link(i?'lesson/'+i:'lessons',i?'Previous lesson':'All lessons')}${button(i<11?'lesson/'+(i+2):'project',i<11?'Next lesson →':'Finish the song project →')}</div>`;
+}
+function tabs(items,active,prefix){return `<div class="tabs">${items.map(([id,label])=>`<a href="#${prefix}/${id}" ${id===active?'aria-current="page"':''}>${label}</a>`).join('')}</div>`;}
+function keyLab(){const ns=scales[scaleKey];
+ return `<section class="panel"><h2>Keys & harmony</h2><p>Play with your computer keyboard or tap the keys below. Hold several keys together to play a chord. Dots mark the notes in the selected scale. Chord pads below use C as their root for comparing colors.</p><div class="control-row"><label>Scale <select data-scale>${Object.keys(scales).map(k=>`<option ${k===scaleKey?'selected':''}>${k}</option>`).join('')}</select></label><label>Sound <select data-wave>${['triangle','sine','sawtooth'].map((s,i)=>`<option value="${s}" ${wave===s?'selected':''}>${['Soft keys','Pure tone','Bright synth'][i]}</option>`).join('')}</select></label></div>${keyboard()}${keyboardHelp()}<div class="chart">${ns.map(pitchLabel).join(' · ')}</div><div class="pill-row"><button class="btn" data-playscale>▶ Play scale</button><button class="pill" data-triad="0,4,7">C major</button><button class="pill" data-triad="0,3,7">C minor</button><button class="pill" data-triad="4,7,12">C first inversion</button><button class="pill" data-triad="7,12,16">C second inversion</button></div><p id="key-feedback" class="result" role="status">Choose a key or chord.</p></section>`;
+}
+const intervals=[[2,'Major second'],[3,'Minor third'],[4,'Major third'],[7,'Perfect fifth'],[12,'Octave']];
+function earLab(){return `<section class="panel"><h2>Hear the interval</h2><p>Hear two ascending notes. Sing both back, then identify the distance. Each new round starts from a different possible pitch.</p><div class="control-row"><button class="btn" data-ear-new>▶ ${ear?'New pair':'Hear a pair'}</button><button class="btn ghost" data-ear-repeat ${ear?'':'disabled'}>Replay pair</button></div><div class="answers">${intervals.map(([n,name])=>`<button data-interval="${n}" ${ear?'':'disabled'}>${name}</button>`).join('')}</div><p id="ear-feedback" class="result" role="status">${ear?'Listen, sing, then choose an interval.':''}</p></section>`;}
+function practice(tab){
+ return bread('Practice room')+heading('Practice room','Play a pattern, change one thing, and listen again. Every sound here is generated on your device.')+tabs([['beat','Beat grid'],['keys','Keys & harmony'],['ear','Ear trainer']],tab,'practice')+`<div class="layout"><div>${tab==='beat'?beatGrid():tab==='keys'?keyLab():earLab()}</div><aside class="aside"><div class="micro">Practice prompt</div><h2>${{beat:'Find the backbeat',keys:'Move one voice',ear:'Sing the gap'}[tab]}</h2><p>${{beat:'Keep your foot on all four beats. Clap only with the snare. Move one kick to an “and” and see if you can keep the same pulse.',keys:'Play C major, then C minor. Sing just the pitch that changes. In both chords, C and G stay put.',ear:'Start by recognizing the octave and fifth. Then compare the thirds. A major third is one semitone wider than a minor third.'}[tab]}</p>${link(tab==='beat'?'lesson/1':tab==='keys'?'lesson/4':'lesson/2','Related lesson')}</aside></div>`;
+}
+function garage(){
+ return bread('GarageBand')+heading('GarageBand field guide','Build the same sixteen-bar song on your device. Work from top to bottom the first time, then return to any step as you record.')+`<div class="tabs">${[['Mac','Mac'],['Touch','iPhone & iPad']].map(([id,t])=>`<button data-device="${id}" aria-pressed="${device===id}">${t}</button>`).join('')}</div><div class="layout"><div>${deviceGuides[device].map(([t,steps],i)=>`<details class="guide-step" ${i===0?'open':''}><summary>${num(i+1)} &nbsp; ${t}</summary><ol>${steps.map(s=>`<li>${s}</li>`).join('')}</ol></details>`).join('')}<section class="panel"><h2>If something sounds wrong</h2>${troubleshooting.map(([q,a])=>`<details class="fold"><summary>${q}</summary><p>${a}</p></details>`).join('')}</section></div><aside class="aside"><div class="micro">Project settings</div><h2>Window Seat</h2>${table(['Setting','Value'],[['Tempo','96 BPM'],['Meter','4/4'],['Key','C major'],['Length','16 bars · 0:40']])}${button('project','Open song project →')}<p class="compact">The Mac and touch versions have different controls. Apple’s device guides cover additional instruments and settings.</p>${link('sources','Apple user guides')}</aside></div>`;
+}
+function project(){
+ const grid=[['1–4 · Intro','C · G · Am · F','Sustain a chord for each bar.'],['5–8 · Verse','C · G · Am · F','Add root bass and the light beat.'],['9–12 · Hook','C · G · Am · F','Add the lead, backbeat and eighth-note hats.'],['13–16 · Outro','C · G · F · C','Chords alone. Let the last C ring.']];
+ return bread('Song project')+heading('Make your first song','Rebuild Window Seat, a short instrumental about watching the view from a train. Once yours plays through, change the hook or write a vocal line over it.')+`<div class="layout"><div class="stack"><section class="project-banner"><div class="micro">Worked composition</div><h2>Window Seat</h2><p>C major &nbsp; / &nbsp; 96 BPM &nbsp; / &nbsp; 4/4 &nbsp; / &nbsp; 0:40</p><div class="control-row"><button class="btn warm" data-song><span aria-hidden="true">▶</span> <span data-song-label>Play full song</span></button><span class="song-now" id="song-now">Ready · 16 bars</span></div><div class="song-bars" aria-hidden="true">${'<i></i>'.repeat(16)}</div></section><div class="panel"><h2>Map the arrangement</h2>${table(['Bars & section','One chord per bar','Performance'],grid)}<p>Use a warm piano for chords, a low bass for the roots, a kit for the pulse and a brighter instrument for the lead. The sample uses simple synthesized sounds so you can hear each entrance.</p></div><div class="panel"><h2>Play the hook</h2><p>Count four beats in each row. Parentheses show how many beats to hold each note. The octave labels here use middle C = C4.</p>${table(course[5].cols,course[5].rows)}${button('practice/keys','Try the keyboard','ghost')}</div><div class="panel"><h2>Make a second version</h2><p>Keep the tempo and the first three pitches of the hook. Change the last pitch, take away the hats for one bar, and write one line of your own. Export both versions and compare the moment the hook begins.</p><label for="song-note"><b>Song notebook</b></label><textarea id="song-note" class="blank-note" placeholder="What image, hook, or arrangement change will you try?">${esc(notebook)}</textarea><p class="compact" id="save-note" role="status">Notes and checkmarks are saved in this browser when local storage is available.</p></div></div><aside class="aside"><div class="micro">Session checklist</div><h2>Build your version</h2>${planSteps.map((s,i)=>`<label class="check-line"><input type="checkbox" data-plan="${i}" ${plan.has(i)?'checked':''}><span>${s}</span></label>`).join('')}<div class="divider"></div><h3>Editable MIDI example</h3><p>On Mac, set a new project to 96 BPM and drag the MIDI file into the empty Tracks area at bar 1. Assign piano, bass, lead and a drum kit if needed. MIDI carries notes and timing, so your instrument sounds can differ.</p><a class="btn ghost" href="window-seat.mid" download>↓ Download MIDI</a>${link('garageband','Recording walkthrough')}</aside></div>`;
+}
+function reference(){return bread('Cheat sheet')+heading('Music cheat sheet','A desk reference for the notes, patterns and recording controls you’ll use while writing a song.')+`<div class="page-actions"><a class="btn" href="music-cheat-sheet.pdf" download>↓ Download printable PDF</a></div><div class="ref-grid">${references.map(b=>`<article class="box"><h2>${b.title}</h2>${table(b.cols,b.rows)}</article>`).join('')}</div>`;}
+function further(){return bread('Sources & further study')+heading('Sources & further study','The first-song course focuses on beat-based songwriting in the twelve-tone system. Follow these paths as your compositions grow.')+`<div class="layout"><section class="panel"><h2>Reference shelf</h2><ul class="source-list">${sources.map(([t,org,u])=>`<li><a href="${u}" target="_blank" rel="noopener">${esc(t)} ↗</a> <small>· ${org}</small></li>`).join('')}</ul><p class="compact">The lessons, synthesized performances and Window Seat arrangement were created for this workbook. External reference pages need an internet connection.</p></section><section class="aside"><h2>What to study next</h2><ul><li><b>Notation.</b> Read treble and bass clefs, identify rests, and notate the four-bar hook. Start with the staff lessons on the reference shelf.</li><li><b>Harmony.</b> Try seventh chords, secondary dominants and modulation. Compare G7 → C with D7 → G → C.</li><li><b>Groove.</b> Write a second song in 3/4 or 6/8. Try swing, alternating long and short subdivisions.</li><li><b>Production.</b> Compare automation, double-tracking and reverb on a single phrase, one adjustment at a time.</li></ul></section></div>`;}
+function drawCards(){
+ $$('[data-art]').forEach(canvas=>{
+  const g=canvas.getContext('2d');canvas.width=660;canvas.height=220;const kind=canvas.dataset.art;
+  g.lineWidth=1;g.strokeStyle='#294c3516';
+  for(let x=0;x<660;x+=26){g.beginPath();g.moveTo(x,0);g.lineTo(x,220);g.stroke();}
+  for(let y=0;y<220;y+=25){g.beginPath();g.moveTo(0,y);g.lineTo(660,y);g.stroke();}
+  if(kind==='rhythm'||kind==='arrange'){
+   g.translate(125,65);g.transform(1,-0.15,0.24,1,0,0);
+   const pat=kind==='rhythm'?[[1,0,0,0,1,0,0,0],[0,0,1,0,0,0,1,0],[1,1,1,1,1,1,1,1]]:[[1,1,1,1,1,1,1,1],[0,0,1,1,1,1,0,0],[0,0,0,0,1,1,0,0]];
+   pat.forEach((r,i)=>r.forEach((v,j)=>{g.fillStyle=v?['#3b664d','#9aac85','#63846b'][i]:'#c3d2b9';g.strokeStyle='#66846b';g.lineWidth=1.7;g.beginPath();g.roundRect(j*48,i*37,38,25,3);g.fill();g.stroke();}));
+  }else if(kind==='keys'){
+   g.translate(125,58);g.transform(1,-0.18,0.34,1,0,0);
+   for(let i=0;i<9;i++){g.fillStyle='#f8ead1';g.strokeStyle='#9b7956';g.lineWidth=1.5;g.beginPath();g.roundRect(i*44,0,42,125,3);g.fill();g.stroke();}
+   [1,2,4,5,6,8].forEach(i=>{g.fillStyle='#3c4b3d';g.fillRect(i*44-12,-1,23,76);g.fillStyle='#64705a';g.fillRect(i*44-10,65,18,5);});
+  }else{
+   const lineY=x=>170-x*0.16;g.lineWidth=1.6;g.strokeStyle='#70969b';
+   for(let k=0;k<5;k++){g.beginPath();g.moveTo(70,lineY(70)+k*13-50);g.lineTo(620,lineY(620)+k*13-50);g.stroke();}
+   const degree=kind==='scale'?[0,1,2,3,4,5,6,7]:[0,2,3,2,2,4,6,5];degree.forEach((v,i)=>{const x=113+i*59,y=lineY(x)+14-v*6.5;g.fillStyle='#355e65';g.beginPath();g.ellipse(x,y,10,7,-0.45,0,2*Math.PI);g.fill();g.fillRect(x+8,y-48,2.3,47);});
+  }
+ });
+}
+function render(move=true){
+ if(MusicEngine.recording)finishTake();
+ releaseKeys();StudioAudio.stop();const raw=location.hash.slice(1)||'home', [page,arg]=raw.split('/');
+ const n=Number(arg), validLesson=page==='lesson'&&Number.isInteger(n)&&n>=1&&n<=course.length;
+ const active=validLesson?'lessons':page;
+ const views={home,lessons,freestyle:freestylePage,practice:()=>practice(['keys','ear'].includes(arg)?arg:'beat'),garageband:garage,project,reference,sources:further};
+ main.innerHTML=validLesson?lesson(n-1):Object.hasOwn(views,page)?views[page]():home();
+ const title=active==='home'?'Music learning studio':main.querySelector('h1')?.textContent||'Overview';document.title=title+' | Roomtone';
+ $$('nav a').forEach(a=>{const yes=a.hash==='#'+active;a.toggleAttribute('aria-current',yes);if(yes)a.setAttribute('aria-current','page');});
+ $('.project-menu').classList.toggle('active',page==='project');drawCards();
+ if(move){window.scrollTo(0,0);main.focus({preventScroll:true});}
+}
+function reveal(key,notes){
+ for(const n of notes){const b=document.querySelector(`[data-note="${n}"]`);if(b){b.classList.add('lit');clearTimeout(b.glow);b.glow=setTimeout(()=>b.classList.remove('lit'),320);}}
+ if($('#synth-readout'))$('#synth-readout').textContent=key.toUpperCase();
+ if($('#key-feedback'))$('#key-feedback').textContent=key;
+}
+function startEar(){const i=intervals[Math.floor(Math.random()*intervals.length)],root=60+Math.floor(Math.random()*8);ear={root,n:i[0],name:i[1]};}
+document.addEventListener('transportchange',()=>{
+ const on=StudioAudio.current==='song';
+ $$('[data-song-label]').forEach(b=>b.textContent=on?'Stop song':b.closest('.hero')?'Hear the song':'Play full song');
+ $$('[data-song]').forEach(b=>{b.setAttribute('aria-pressed',String(on));b.firstElementChild.textContent=on?'■':'▶';});
+ if($('[data-grid-play]'))$('[data-grid-play]').textContent=StudioAudio.current==='grid'?'■ Stop beat':'▶ Play beat';
+ if(!StudioAudio.current){$$('.now,.here').forEach(b=>b.classList.remove('now','here'));if($('#song-now'))$('#song-now').textContent='Ready · 16 bars';if($('#synth-readout'))$('#synth-readout').textContent='C MAJOR';}
+});
+document.addEventListener('click',e=>{
+ if(e.target.closest('.skip')){e.preventDefault();main.focus();return;}
+ const b=e.target.closest('button');if(!b)return;const d=b.dataset;
+ if(b.hasAttribute('data-song')){
+  if(StudioAudio.current==='song'){StudioAudio.stop();return;}
+  StudioAudio.playSong((bar,beatNo)=>{if($('#song-now'))$('#song-now').textContent=`${partName(bar)} · bar ${bar+1} · beat ${beatNo+1} · ${songChords[bar]}`;$$('.song-bars i').forEach((x,j)=>x.classList.toggle('here',j===bar));if($('#synth-readout'))$('#synth-readout').textContent=`${songChords[bar]} · ${num(bar+1)}.${beatNo+1}`;});return;
+ }
+ if(d.chord){const notes=harmony[d.chord].notes;StudioAudio.playNotes(notes);reveal(d.chord,notes);}
+ if(d.quiz!==undefined){const l=course[+d.lesson],right=+d.quiz===l.correct;const out=$('#quiz-result');out.textContent=right?'Correct. '+l.why:'Try again. '+l.why;out.classList.toggle('incorrect',!right);$$('[data-quiz]').forEach(x=>x.classList.toggle('chosen',x===b));}
+ if(d.triad){const ns=d.triad.split(',').map(i=>60+Number(i));StudioAudio.playNotes(ns,false,wave);reveal(`${b.textContent} · ${ns.map(pitchLabel).join(' – ')}`,ns);}
+ if(b.hasAttribute('data-playscale')){StudioAudio.playNotes(scales[scaleKey],true,wave);$('#key-feedback').textContent=`${scaleKey} · ${scales[scaleKey].map(pitchLabel).join(' – ')}`;}
+ if(b.hasAttribute('data-ear-new')||b.hasAttribute('data-ear-repeat')){StudioAudio.stop();if(b.hasAttribute('data-ear-new')){startEar();$('[data-ear-new]').textContent='▶ New pair';$$('[data-interval],[data-ear-repeat]').forEach(x=>x.disabled=false);$$('[data-interval]').forEach(x=>x.classList.remove('chosen'));$('#ear-feedback').textContent='Listen, sing, then choose an interval.';}if(ear)StudioAudio.playNotes([ear.root,ear.root+ear.n],true);}
+ if(d.interval&&ear){const right=+d.interval===ear.n,out=$('#ear-feedback');out.textContent=right?`Correct. ${pitchLabel(ear.root)} to ${pitchLabel(ear.root+ear.n)} is a ${ear.name.toLowerCase()} (${ear.n} semitones).`:'Listen once more. Sing the first pitch and then the second.';out.classList.toggle('incorrect',!right);$$('[data-interval]').forEach(x=>x.classList.toggle('chosen',x===b));}
+ if(d.device){device=d.device;save('device',device);render(false);$(`[data-device="${device}"]`).focus({preventScroll:true});}
+});
+document.addEventListener('change',e=>{
+ const b=e.target,d=b.dataset;
+ if(d.complete!==undefined){const i=+d.complete;b.checked?done.add(i):done.delete(i);save('lessons',[...done]);const old=$('.progressbox');if(old)old.outerHTML=progress();$('#status').textContent=storageOK?'Lesson progress updated.':'Lesson progress is kept for this visit.';}
+ if(d.plan!==undefined){const i=+d.plan;b.checked?plan.add(i):plan.delete(i);save('plan',[...plan]);}
+ if(b.hasAttribute('data-click'))clickOn=b.checked;
+ if(b.hasAttribute('data-scale')){scaleKey=b.value;render(false);$('[data-scale]').focus({preventScroll:true});}
+ if(b.hasAttribute('data-wave'))wave=b.value;
+});
+document.addEventListener('input',e=>{
+ const b=e.target;if(b.hasAttribute('data-tempo')){bpm=+b.value;$$('[data-bpm-output]').forEach(o=>o.textContent=bpm);saveBeat();}
+ if(b.hasAttribute('data-volume'))StudioAudio.setVolume(+b.value/100);
+ if(b.id==='song-note'){notebook=b.value;save('note',notebook);$('#save-note').textContent=storageOK?'Saved in this browser.':'Kept for this visit. Browser storage is unavailable.';}
+});
+window.addEventListener('hashchange',()=>render());window.addEventListener('pagehide',()=>StudioAudio.stop());
+document.addEventListener('visibilitychange',()=>{if(document.hidden)StudioAudio.stop();});
+

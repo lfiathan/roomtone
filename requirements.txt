@@ -1,0 +1,2 @@
+# Pinned so the cheat-sheet PDF renders the same way on every machine.
+reportlab==4.2.5

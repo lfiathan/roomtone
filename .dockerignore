@@ -1,0 +1,7 @@
+outputs/
+work/qa/
+work/transfer.*
+work/final-transfer.*
+work/keyboard-save.*
+**/__pycache__/
+.DS_Store
