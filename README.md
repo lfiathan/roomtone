@@ -16,7 +16,7 @@ window-seat.mid       (base64) ─┘
 
 | Path | What it holds |
 |---|---|
-| `work/site-assets/` | The real source: 9 CSS and JS modules |
+| `work/site-assets/` | The real source: 10 CSS and JS modules |
 | `work/site-template.html` | Page shell the assets are inlined into |
 | `work/*.py`, `work/*.js` | Build scripts (see targets below) |
 | `work/qa/` | WebKit screenshot and assertion harnesses |
@@ -52,7 +52,7 @@ PYTHON=.venv/bin/python make all
 | `make package` | Mirror into `outputs/` and rebuild the zip |
 | `make verify` | Confirm `index.html` is not stale |
 | `make check` | Confirm the beat MIDI still matches what is committed |
-| `make qa` | Run both headless interaction suites (macOS) |
+| `make qa` | Run all five headless interaction suites (macOS) |
 | `make serve` | Preview at `http://localhost:8080` |
 
 ## Build with Docker
@@ -93,7 +93,7 @@ consequences:
 
 ## Tests
 
-`make qa` compiles two small Objective-C/WebKit harnesses and runs three suites
+`make qa` compiles two small Objective-C/WebKit harnesses and runs five suites
 against the built page:
 
 - `work/qa/check-upgrade.js` — 421 assertions over the keyboard mapping, beat
@@ -102,6 +102,26 @@ against the built page:
   transpose, scene recall and persistence.
 - `work/qa/check-piano.js` — 57 assertions over the piano keybed, the typing
   window, the sustain pedal, touch and MIDI input.
+- `work/qa/check-lessons.js` — 228 assertions over the lesson figures, the fixed
+  page shape, vocabulary order and the quiz.
+- `work/qa/check-narrow.js` — 49 assertions that every route fits a 390px
+  viewport, run at that width.
 
-All three stub `AudioContext` with `OfflineAudioContext`, so the audio graph is
+All five stub `AudioContext` with `OfflineAudioContext`, so the audio graph is
 exercised without an output device.
+
+## Lesson figures
+
+`work/site-assets/figures.js` holds five SVG primitives — `keys`, `grid`,
+`timeline`, `contour` and `meters` — and each lesson names one as data rather
+than drawing its own markup:
+
+```js
+fig:{kind:'grid', beats:4, div:2,
+     lanes:[{name:'Snare', tone:'orange', on:[2,6]}],
+     alt:'...', caption:'...'}
+```
+
+`drawFigure` dispatches on `kind`. Every figure carries an `alt` for screen
+readers and a `caption` shown under it, and `check-lessons.js` fails if either
+is missing or if a figure stops marking the notes or hits its caption claims.

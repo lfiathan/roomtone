@@ -6,8 +6,20 @@ Open **index.html** in Safari, Chrome, Firefox, or Edge. The lessons, instrument
 
 1. Select **Hear the song** on the overview. Listen for the drums entering and the hook arriving.
 2. Open **Rhythm & time**. Clap on beats 2 and 4, then use the beat grid to try it at 72 BPM.
-3. Complete the recall check and return to the lesson once from memory. Continue in order through the twelve lessons.
+3. Work down the page, answer the check at the bottom, then return once from memory. Continue in order through the twelve lessons.
 4. Open **Song project** and **GarageBand** together when you are ready to record. Choose Mac or iPhone & iPad in the guide.
+
+## How a lesson is laid out
+
+Every lesson has the same shape, so you always know where you are:
+
+1. **Get the idea** — the plain-language version, no jargon and no arithmetic.
+2. **A diagram of exactly that** — the keyboard, the rhythm grid, the melody or the arrangement being described, drawn rather than written out.
+3. **The precise version** — the same idea with the terms named. Terms appear in **bold** where they are defined, and nothing is used before it is explained.
+4. **A reference table**, then **Try it yourself**, then **In GarageBand**.
+5. **Check yourself** — one question, at the bottom, about something the lesson has already covered.
+
+The panel on the right is the readiness check: what you should be able to do before moving on, and the box to tick when you can.
 
 ## Play the piano
 
