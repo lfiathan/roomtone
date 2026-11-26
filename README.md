@@ -93,13 +93,15 @@ consequences:
 
 ## Tests
 
-`make qa` compiles two small Objective-C/WebKit harnesses and runs them against
-the built page:
+`make qa` compiles two small Objective-C/WebKit harnesses and runs three suites
+against the built page:
 
 - `work/qa/check-upgrade.js` — 421 assertions over the keyboard mapping, beat
   grid, templates, routing and WAV capture.
 - `work/qa/check-freestyle.js` — 44 assertions over the deck parts, density,
   transpose, scene recall and persistence.
+- `work/qa/check-piano.js` — 57 assertions over the piano keybed, the typing
+  window, the sustain pedal, touch and MIDI input.
 
-Both stub `AudioContext` with `OfflineAudioContext`, so the audio graph is
+All three stub `AudioContext` with `OfflineAudioContext`, so the audio graph is
 exercised without an output device.

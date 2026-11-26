@@ -1,5 +1,6 @@
 'use strict';
 const voices={
+ grand:{name:'Grand piano',waves:[['triangle',1,.60],['sine',2,.20],['sine',3,.09],['sine',4,.045],['triangle',1,.065,-7]],attack:.002,decay:2.6,sustain:.055,release:.26,cutoff:4200},
  piano:{name:'Electric piano',waves:[['triangle',1,.82],['sine',2,.18]],attack:.008,decay:.75,sustain:.26,release:.2,cutoff:3900},
  bass:{name:'Analog bass',waves:[['sawtooth',1,.38],['sine',1,.62]],attack:.008,decay:.18,sustain:.60,release:.09,cutoff:640},
  pluck:{name:'Plucked strings',waves:[['sawtooth',1,.43],['triangle',2,.30],['sine',1,.27]],attack:.004,decay:.28,sustain:.035,release:.12,cutoff:3100},
@@ -40,7 +41,7 @@ const MusicEngine=(()=>{
   const ctx=StudioAudio.context, cfg=voices[patch]||voices.piano, at=options.at??ctx.currentTime;
   const limit=options.duration, strength=options.level??.24;
   const env=ctx.createGain(), filter=ctx.createBiquadFilter();
-  filter.type='lowpass';filter.frequency.value=cfg.cutoff;
+  filter.type='lowpass';filter.frequency.value=options.cutoff??cfg.cutoff;
   env.connect(filter);filter.connect(options.bus?mixer.bus[options.bus]:StudioAudio.output);
   const peak=Math.max(.0002,strength), floor=.0001, sustain=Math.max(floor,peak*cfg.sustain);
   const envelope=(age)=>age<=0?floor:age<cfg.attack?floor+(peak-floor)*age/cfg.attack:age<cfg.attack+cfg.decay?peak*(sustain/peak)**((age-cfg.attack)/cfg.decay):sustain;

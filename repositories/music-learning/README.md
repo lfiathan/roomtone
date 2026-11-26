@@ -9,6 +9,19 @@ Open **index.html** in Safari, Chrome, Firefox, or Edge. The lessons, instrument
 3. Complete the recall check and return to the lesson once from memory. Continue in order through the twelve lessons.
 4. Open **Song project** and **GarageBand** together when you are ready to record. Choose Mac or iPhone & iPad in the guide.
 
+## Play the piano
+
+Open **Piano**. This room is for playing pieces rather than building loops: a wide keyboard, a sustain pedal, touch control and MIDI input.
+
+- **Keys** sets how much of the keyboard you can see, from 25 to 61. The shaded keys are the ones your computer keyboard maps; **[** and **]** slide that 25-key window across the range and the keyboard follows it.
+- **Sustain** is the pedal. Hold **Space**, or press and hold the button. Notes you release keep ringing until you lift it.
+- **Touch** sets how hard every typed note lands, from Pianissimo to Fortissimo, because a computer keyboard cannot sense how hard you press.
+- **Voice** chooses the sound. **Grand piano** has a long natural decay; the others are lighter.
+
+For real playing, connect a USB or Bluetooth MIDI keyboard and press **Connect a MIDI keyboard**. Every key arrives with its own velocity, so dynamics work, and a sustain pedal on the controller is read too. Web MIDI works in Chrome and Edge; Safari and Firefox do not support it yet.
+
+Two limits are worth knowing when you play with the computer keyboard. It sends no velocity, so the Touch setting applies to every note equally. Most keyboards also report only about six keys at once, and cheaper ones drop to three, so a full chord under a melody will lose notes. A MIDI keyboard removes both limits.
+
 ## Compose and perform
 
 Open **Freestyle**. Under **Genre templates**, choose a style family and a groove. **Preview beat** auditions it. **Load template** copies it into the drum grid along with its meter and tempo. The 37 patterns are original starting points grouped across eight style families.

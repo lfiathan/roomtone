@@ -65,6 +65,35 @@ const mix={
 const thins=(layer,step)=>mix.density[layer]>=100||spread(step+7,layer+3)<mix.density[layer]/100;
 // The kick and snare carry the pulse, so thinning only touches the rest of the kit.
 const keepHit=(id,r,step)=>mix.density[0]>=100||id==='kick'||id==='snare'||spread(step*31+r,r+5)<mix.density[0]/100;
+// ---- Piano room -------------------------------------------------------------
+// A wider keyboard with a sustain pedal, touch control and MIDI input, for
+// playing pieces rather than sketching loops. The typing window stays 25 keys;
+// the displayed range is larger and follows it.
+const pianoVoices=['grand','piano','organ','bell'];
+const pianoSizes=[25,37,49,61];
+const touchLevels=[.11,.17,.25,.33,.42], touchCutoffs=[1500,2200,3100,4300,5900];
+const touchNames=['Pianissimo','Piano','Mezzo','Forte','Fortissimo'];
+const keptPiano=read('piano',{})||{};
+const piano={
+ voice:pianoVoices.includes(keptPiano.voice)?keptPiano.voice:'grand',
+ size:pianoSizes.includes(keptPiano.size)?keptPiano.size:49,
+ low:inRange(keptPiano.low,12,96,36),
+ touch:inRange(keptPiano.touch,1,5,3)
+};
+let pedalDown=false, midiStatus='Not connected.', midiBound=false;
+const sustained=new Set();
+function savePiano(){save('piano',piano);}
+// Keep the 25 keys the computer maps inside the range actually on screen,
+// otherwise typing would hit notes that have no key to light up.
+function fitWindow(){
+ const bottom=keyboardBase(), top=bottom+24;
+ let low=piano.low;
+ if(bottom<low)low=bottom;
+ if(top>low+piano.size-1)low=top-piano.size+1;
+ low=12*Math.floor(low/12);
+ if(top>low+piano.size-1)low=12*Math.ceil((top-piano.size+1)/12);
+ piano.low=Math.max(12,Math.min(108-piano.size,low));
+}
 const savedBeat=read('groove',{})||{};
 let meterName=Object.hasOwn(meters,savedBeat.meter)?savedBeat.meter:'4/4';
 let gridSize=degrees.includes(savedBeat.size)?savedBeat.size:1;
@@ -112,24 +141,48 @@ function keyboardHelp(){
  });
  return `<div class="key-controls"><table class="key-map"><thead><tr><th>Register</th><th>White keys</th><th>Black keys</th></tr></thead><tbody>${rows.join('')}</tbody></table><div class="octaves"><span>Shift octaves</span><button data-oct="-1" aria-label="Lower both registers, left bracket" ${octave<=-2?'disabled':''}>[ −</button><output>${pitchLabel(first)}–${pitchLabel(first+24)}</output><button data-oct="1" aria-label="Raise both registers, right bracket" ${octave>=2?'disabled':''}>+ ]</button></div></div>`;
 }
-function playLive(id,note,el){
+function playLive(id,note,el,velocity){
  if(activeKeys.has(id))return;
- const stage=!!$('#freestyle-board'),patch=stage?mix.sound:$('.mini-keys')?'piano':wave;
+ const room=!!$('#piano-room');
+ const stage=!!$('#freestyle-board'),patch=room?piano.voice:stage?mix.sound:$('.mini-keys')?'piano':wave;
  if(stage&&MusicEngine.setup())MusicEngine.setMix(mix);
- const release=MusicEngine.play(note,patch,{bus:stage?'live':undefined});
- activeKeys.set(id,{note,release,el});el.classList.add('held');el.setAttribute('aria-pressed','true');
- const readout=$('#synth-readout')||$('#key-feedback')||$('#live-note');
+ let options={bus:stage?'live':undefined};
+ if(room){
+  // A MIDI key reports how hard it was struck; a computer key cannot, so the
+  // Touch control stands in for it.
+  const v=Number.isFinite(velocity)?Math.max(1,Math.min(127,velocity)):null;
+  options={level:v===null?touchLevels[piano.touch-1]:.06+(v/127)*.40,
+           cutoff:v===null?touchCutoffs[piano.touch-1]:1200+(v/127)*5000};
+ }
+ const release=MusicEngine.play(note,patch,options);
+ activeKeys.set(id,{note,release,el,pedal:room});el?.classList.add('held');el?.setAttribute('aria-pressed','true');
+ const readout=$('#piano-note')||$('#synth-readout')||$('#key-feedback')||$('#live-note');
  if(readout)readout.textContent=[...new Set([...activeKeys.values()].map(k=>pitchLabel(k.note)))].join(' · ');
 }
 function releaseKey(id){
- const held=activeKeys.get(id);if(!held)return;held.release();activeKeys.delete(id);
- if(![...activeKeys.values()].some(k=>k.el===held.el)){held.el.classList.remove('held');held.el.setAttribute('aria-pressed','false');}
+ const held=activeKeys.get(id);if(!held)return;
+ // With the pedal down the damper stays off: hold the note and let it ring.
+ if(pedalDown&&held.pedal)sustained.add(held.release);else held.release();
+ activeKeys.delete(id);
+ if(![...activeKeys.values()].some(k=>k.el===held.el)){held.el?.classList.remove('held');held.el?.setAttribute('aria-pressed','false');}
 }
-function releaseKeys(){for(const id of activeKeys.keys())releaseKey(id);}
+function releaseKeys(){
+ for(const id of activeKeys.keys())releaseKey(id);
+ for(const release of sustained)release();
+ sustained.clear();pedalDown=false;
+}
+function setPedal(on){
+ if(on===pedalDown)return;
+ pedalDown=on;
+ if(!on){for(const release of sustained)release();sustained.clear();}
+ const b=$('[data-pedal]');
+ if(b){b.setAttribute('aria-pressed',String(on));b.classList.toggle('down',on);}
+}
 function shiftOctave(amount){
  const next=Math.max(-2,Math.min(2,octave+amount));if(next===octave)return;
  releaseKeys();octave=next;
  const keys=$('.mini-keys,.lab-keys');if(keys)keys.outerHTML=keyboard(keys.classList.contains('mini-keys'));
+ if($('#piano-room'))refreshPiano();
  const help=$('.key-controls');if(help)help.outerHTML=keyboardHelp();
  const display=$('#synth-readout')||$('#live-note')||$('#key-feedback');if(display)display.textContent='Keyboard starts on '+pitchLabel(keyboardBase());
 }
@@ -286,6 +339,85 @@ function partControls(i){
 function mixerDeck(title,kind,indices){
  return `<section class="mix-deck ${kind}"><div class="deck-title"><span class="deck-letter" aria-hidden="true">${kind==='rhythm-deck'?'A':'B'}</span><div><div class="micro">Deck ${kind==='rhythm-deck'?'A':'B'}</div><h3>${title}</h3></div></div><div class="channel-list">${indices.map(i=>`<div class="channel"><button class="layer-key" data-layer="${i}" aria-pressed="${mix.layers[i]}"><i></i>${layerNames[i]}<small>${mix.layers[i]?'On':'Off'}</small></button><label><span>${layerNames[i]} level</span><input type="range" min="0" max="100" value="${mix.levels[i]}" data-level="${i}"></label>${partControls(i)}</div>`).join('')}</div></section>`;
 }
+function windowLabel(){return pitchLabel(keyboardBase())+'\u2013'+pitchLabel(keyboardBase()+24);}
+function grandKeyboard(){
+ fitWindow();
+ const low=piano.low, count=piano.size, bottom=keyboardBase();
+ let whiteTotal=0;
+ for(let i=0;i<count;i++)if(!blackSteps.has((low+i)%12))whiteTotal++;
+ let whiteCount=0;
+ const keys=[];
+ for(let i=0;i<count;i++){
+  const note=low+i, black=blackSteps.has(note%12), label=pitchLabel(note);
+  const typed=note>=bottom&&note<=bottom+24?mappedKeys[note-bottom]:'';
+  const scaleTone=scales[scaleKey].some(n=>n%12===note%12);
+  const style=black?` style="left:${whiteCount/whiteTotal*100}%;width:${.62/whiteTotal*100}%"`:'';
+  if(!black)whiteCount++;
+  const named=!black&&(count<=25||note%12===0);
+  const badge=typed&&!black&&count<=37?`<b class="letter-badge">${typed}</b>`:'';
+  keys.push(`<button type="button" class="${black?'blackkey':'whitekey'}${!black&&scaleTone?' inscale':''}${typed?' typed':''}" data-note="${note}" aria-label="Play ${label}${typed?' with '+typed:''}" aria-pressed="false" title="${label}${typed?' \u00b7 '+typed:''}"${style}><span>${named?label:''}</span>${badge}</button>`);
+ }
+ return `<div class="grand-keys" role="group" aria-label="Piano keyboard, ${pitchLabel(low)} to ${pitchLabel(low+count-1)}">${keys.join('')}</div>`;
+}
+function refreshPiano(){
+ const board=$('.grand-keys');if(board)board.outerHTML=grandKeyboard();
+ const w=$('#piano-window');if(w)w.textContent=windowLabel();
+ const down=$('[data-oct="-1"]'),up=$('[data-oct="1"]');
+ if(down)down.disabled=octave<=-2;
+ if(up)up.disabled=octave>=2;
+ const status=$('#midi-status');if(status)status.textContent=midiStatus;
+}
+function setMidiStatus(text){midiStatus=text;const el=$('#midi-status');if(el)el.textContent=text;}
+function onMidiMessage(e){
+ const [status,a,b]=e.data, type=status&0xf0;
+ if(type===0x90&&b>0)playLive('midi-'+a,a,$(`[data-note="${a}"]`),b);
+ else if(type===0x80||(type===0x90&&b===0))releaseKey('midi-'+a);
+ else if(type===0xb0&&a===64)setPedal(b>=64);
+ else if(type===0xb0&&a===123)releaseKeys();
+}
+function connectMidi(){
+ if(!navigator.requestMIDIAccess){
+  setMidiStatus('This browser has no Web MIDI. Chrome and Edge support it; Safari and Firefox do not.');return;
+ }
+ setMidiStatus('Asking for permission\u2026');
+ navigator.requestMIDIAccess().then(access=>{
+  const bind=()=>{
+   const names=[];
+   for(const input of access.inputs.values()){input.onmidimessage=onMidiMessage;names.push(input.name||'MIDI device');}
+   setMidiStatus(names.length?'Connected: '+names.join(', '):'No MIDI device found. Plug one in and it will connect itself.');
+  };
+  if(!midiBound){access.onstatechange=bind;midiBound=true;}
+  bind();
+ }).catch(()=>setMidiStatus('MIDI permission was declined. Reload the page to ask again.'));
+}
+function pianoPage(){
+ fitWindow();
+ return bread('Piano room')+heading('Piano room','A wide keyboard with a sustain pedal, touch control and MIDI input. Built for playing pieces rather than sketching loops.')+
+ `<section id="piano-room">
+  <div class="room-top">
+   <div><span class="micro">Now playing</span><h2 id="piano-note">Ready</h2></div>
+   <div class="room-actions">
+    <label>Voice <select data-piano-voice>${pianoVoices.map(v=>`<option value="${v}" ${piano.voice===v?'selected':''}>${esc(voices[v].name)}</option>`).join('')}</select></label>
+    <label>Touch <select data-touch>${touchNames.map((n,i)=>`<option value="${i+1}" ${piano.touch===i+1?'selected':''}>${n}</option>`).join('')}</select></label>
+    <button class="btn" data-pedal aria-pressed="false">Sustain <kbd>Space</kbd></button>
+   </div>
+  </div>
+  ${grandKeyboard()}
+  <div class="room-foot">
+   <label>Keys <select data-piano-size>${pianoSizes.map(n=>`<option value="${n}" ${piano.size===n?'selected':''}>${n} keys</option>`).join('')}</select></label>
+   <div class="octaves"><span>Typing window</span><button data-oct="-1" aria-label="Move the typing window down an octave" ${octave<=-2?'disabled':''}>[ \u2212</button><output id="piano-window">${windowLabel()}</output><button data-oct="1" aria-label="Move the typing window up an octave" ${octave>=2?'disabled':''}>+ ]</button></div>
+   <div class="midi-box"><button class="pill" data-midi>Connect a MIDI keyboard</button><small id="midi-status">${esc(midiStatus)}</small></div>
+  </div>
+ </section>
+ <div class="free-columns"><div class="stack"><section class="panel"><h2>Playing with a computer keyboard</h2>
+  <p>The shaded keys are the ones your computer maps. White keys are <kbd>Q W E R T Y U</kbd> then <kbd>Z X C V B N M ,</kbd>; black keys are <kbd>2 3 5 6 7</kbd> and <kbd>A S D F G</kbd>. Use <kbd>[</kbd> and <kbd>]</kbd> to move that window across the full range, and hold <kbd>Space</kbd> for the sustain pedal.</p>
+  <p>Two limits are worth knowing. A computer keyboard sends no velocity, so every note arrives at the same strength and the <b>Touch</b> control sets it for all of them. Most keyboards also report only about six keys at once, and cheaper ones drop to three, so a full chord under a melody will lose notes.</p>
+  </section></div><div class="stack"><section class="panel"><h2>Playing with a real keyboard</h2>
+  <p>Connect any USB or Bluetooth MIDI keyboard and press <b>Connect a MIDI keyboard</b>. Every key and its velocity come straight through, so dynamics work, and a sustain pedal on the controller is read as well.</p>
+  <p>Web MIDI needs Chrome or Edge. Safari and Firefox do not support it yet.</p>
+  ${link('practice/keys','Practice scales and intervals')}
+  </section></div></div>`;
+}
 function freestylePage(){
  return bread('Freestyle studio')+heading('Freestyle studio','Build a groove on two decks. Fade between rhythm and harmony, play a melody with your keyboard, and capture the whole performance.')+
  `<section id="freestyle-board"><div class="booth-top"><div><span class="micro">Live mix</span><h2 id="board-groove">${showGroove()}</h2></div><div class="booth-actions"><button class="btn warm" data-deck-play>▶ Start decks</button><button class="record-btn" data-record>● Record take</button></div></div><div class="booth-clock"><span id="deck-position">Ready · 4-bar progression</span><div class="bar-markers" aria-hidden="true">${[1,2,3,4].map(()=>'<i data-bar-marker></i>').join('')}</div></div><div class="decks">${mixerDeck('Rhythm section','rhythm-deck',[0,1])}<div class="mix-center"><span class="micro">Mixer</span><label>Crossfader <input data-mix="blend" type="range" min="0" max="100" value="${mix.blend}"><span class="range-ends"><small>A · Rhythm</small><small>B · Harmony</small></span></label><label>Low-pass filter <input data-mix="filter" type="range" min="0" max="100" value="${mix.filter}"><span class="range-ends"><small>Dark</small><small>Open</small></span></label><label>Transpose <span id="transpose-read">${mix.transpose>0?'+':''}${mix.transpose} st</span><input data-mix="transpose" type="range" min="-12" max="12" value="${mix.transpose}"><span class="range-ends"><small>-12</small><small>+12</small></span></label></div>${mixerDeck('Harmony section','harmony-deck',[2,3])}</div><div class="scene-row"><span class="micro">Scenes</span>${Object.keys(sceneSets).map(s=>`<button class="scene" data-scene="${s}" aria-pressed="${matchesScene(s)}">${s}</button>`).join('')}</div></section>
@@ -318,17 +450,26 @@ function pianoShortcut(e){
 }
 function typingTarget(el){return el?.closest?.('input,textarea,select,[contenteditable]:not([contenteditable="false"]),[role="textbox"]');}
 document.addEventListener('keydown',e=>{
- if(e.repeat||e.isComposing||e.metaKey||e.ctrlKey||e.altKey||typingTarget(e.target)||!$('.lab-keys,.mini-keys'))return;
+ if(e.repeat||e.isComposing||e.metaKey||e.ctrlKey||e.altKey||typingTarget(e.target)||!$('.lab-keys,.mini-keys,.grand-keys'))return;
  const k=pianoShortcut(e),id='key-'+k,index=mappedKeys.indexOf(k);
  if(e.key===' '&&$('#freestyle-board')&&!e.target.closest?.('button,a,audio')){e.preventDefault();StudioAudio.current==='freestyle'?stopDecks():startDecks();return;}
+ if(e.key===' '&&$('#piano-room')){e.preventDefault();if(!e.repeat)setPedal(true);return;}
  if(k==='['||k===']'){e.preventDefault();shiftOctave(k==='['?-1:1);return;}
  const pad=/^Numpad[1-9]$/.test(k)?Number(k.slice(6)):e.shiftKey&&/^[1-9]$/.test(k)?Number(k):0;
  if(pad){if($('#freestyle-board')){e.preventDefault();pressPad(kit[pad-1][0]);}return;}
  if(index<0)return;const n=keyboardBase()+index,btn=$(`[data-note="${n}"]`);
  if(btn){e.preventDefault();playLive(id,n,btn);}
 });
-document.addEventListener('keyup',e=>releaseKey('key-'+pianoShortcut(e)));
+document.addEventListener('keyup',e=>{
+ if(e.key===' '&&$('#piano-room')){setPedal(false);return;}
+ releaseKey('key-'+pianoShortcut(e));
+});
+window.addEventListener('blur',()=>setPedal(false));
 document.addEventListener('pointerdown',e=>{
+ const pedal=e.target.closest?.('[data-pedal]');
+ if(pedal&&e.button===0){e.preventDefault();setPedal(true);
+  const lift=()=>{setPedal(false);window.removeEventListener('pointerup',lift);window.removeEventListener('pointercancel',lift);};
+  window.addEventListener('pointerup',lift);window.addEventListener('pointercancel',lift);return;}
  const b=e.target.closest?.('[data-note]');if(!b||e.button!==0)return;
  e.preventDefault();b.focus({preventScroll:true});try{b.setPointerCapture(e.pointerId);}catch{}
  playLive('pointer-'+e.pointerId,+b.dataset.note,b);
@@ -367,6 +508,8 @@ document.addEventListener('click',e=>{
  if(b.hasAttribute('data-preview'))audition();
  if(b.hasAttribute('data-deck-play'))StudioAudio.current==='freestyle'?stopDecks():startDecks();
  if(b.hasAttribute('data-record'))recordToggle();
+ if(b.hasAttribute('data-midi'))connectMidi();
+ if(b.hasAttribute('data-pedal')&&e.detail===0)setPedal(!pedalDown);
  if(d.layer!==undefined){const i=+d.layer;mix.layers[i]=!mix.layers[i];saveMix();updateBoard();}
  if(d.scene){applyScene(d.scene);saveMix();updateBoard();}
 });
@@ -378,6 +521,9 @@ document.addEventListener('change',e=>{
  }
  if(b.hasAttribute('data-grid-size')){const was=StudioAudio.current;gridSize=Number(b.value);syncGrooveUI(was);$('[data-grid-size]')?.focus({preventScroll:true});}
  if(b.hasAttribute('data-live-sound')){releaseKeys();mix.sound=b.value;saveMix();}
+ if(b.hasAttribute('data-piano-voice')){releaseKeys();piano.voice=b.value;savePiano();}
+ if(b.hasAttribute('data-touch')){piano.touch=+b.value;savePiano();}
+ if(b.hasAttribute('data-piano-size')){piano.size=+b.value;savePiano();refreshPiano();}
  if(d.progression!==undefined){mix.chords[+d.progression]=b.value;saveMix();}
  if(d.style){mix.styles[d.style]=b.value;saveMix();updateBoard();}
  if(b.hasAttribute('data-arp-rate')){mix.arpRate=+b.value;saveMix();updateBoard();}

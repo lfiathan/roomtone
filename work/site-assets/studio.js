@@ -86,7 +86,7 @@ function render(move=true){
  releaseKeys();StudioAudio.stop();const raw=location.hash.slice(1)||'home', [page,arg]=raw.split('/');
  const n=Number(arg), validLesson=page==='lesson'&&Number.isInteger(n)&&n>=1&&n<=course.length;
  const active=validLesson?'lessons':page;
- const views={home,lessons,freestyle:freestylePage,practice:()=>practice(['keys','ear'].includes(arg)?arg:'beat'),garageband:garage,project,reference,sources:further};
+ const views={home,lessons,piano:pianoPage,freestyle:freestylePage,practice:()=>practice(['keys','ear'].includes(arg)?arg:'beat'),garageband:garage,project,reference,sources:further};
  main.innerHTML=validLesson?lesson(n-1):Object.hasOwn(views,page)?views[page]():home();
  const title=active==='home'?'Music learning studio':main.querySelector('h1')?.textContent||'Overview';document.title=title+' | Roomtone';
  $$('nav a').forEach(a=>{const yes=a.hash==='#'+active;a.toggleAttribute('aria-current',yes);if(yes)a.setAttribute('aria-current','page');});
@@ -96,6 +96,7 @@ function render(move=true){
 function reveal(key,notes){
  for(const n of notes){const b=document.querySelector(`[data-note="${n}"]`);if(b){b.classList.add('lit');clearTimeout(b.glow);b.glow=setTimeout(()=>b.classList.remove('lit'),320);}}
  if($('#synth-readout'))$('#synth-readout').textContent=key.toUpperCase();
+ if($('#piano-note'))$('#piano-note').textContent=key;
  if($('#key-feedback'))$('#key-feedback').textContent=key;
 }
 function startEar(){const i=intervals[Math.floor(Math.random()*intervals.length)],root=60+Math.floor(Math.random()*8);ear={root,n:i[0],name:i[1]};}
