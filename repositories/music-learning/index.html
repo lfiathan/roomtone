@@ -204,7 +204,7 @@ main{padding:31px 0 58px;min-height:75vh;outline:none}.hero{background:#193b32;p
 .w-pills{display:flex;gap:7px;flex-wrap:wrap}
 
 /* Keyboards. A widget keybed carries its own frame rather than borrowing
-   .lab-keys, which performance.css lays out as two stacked banks for the
+   .lab-keys, which rooms.css lays out as two stacked banks for the
    practice room — a flat run of keys needs one flex row. The tints say what a
    key is doing: a landmark, a chord member, one end of an interval. */
 .w-keys{display:flex;position:relative;isolation:isolate;height:118px;max-width:100%;
@@ -689,6 +689,54 @@ const wPlayBtn=(st,label='Play')=>`<button type="button" class="btn" data-wplay 
 /* =========================================================== the widgets */
 const W_KINDS={};
 
+/* ========================================================= plumbing */
+function drawWidget(spec){
+ if(!spec||!Object.hasOwn(W_KINDS,spec.kind))return '';
+ const kind=W_KINDS[spec.kind], id='w'+(++wNext);
+ const st=Object.assign({id,spec,kind:spec.kind},kind.init?kind.init(spec):{});
+ W_STATE.set(id,st);
+ return `<section class="widget" data-w="${id}" data-wkind="${esc(spec.kind)}" aria-label="${esc(spec.title||'Interactive')}">`
+  +`<div class="widget-top"><span class="micro">${esc(spec.eyebrow||'Try it here')}</span><h3>${esc(spec.title||'')}</h3></div>`
+  +(spec.hint?`<p class="widget-hint">${spec.hint}</p>`:'')
+  +`<div class="widget-body">${kind.body(st)}</div>`
+  +`<p class="widget-say" data-w-say role="status">${spec.say||''}</p></section>`;
+}
+
+const W_CLICK='[data-wkey],[data-wstep],[data-wplay],[data-wpill],[data-wcell],[data-wtoggle],[data-wtap],[data-wab],[data-wclear]';
+document.addEventListener('click',e=>{
+ const btn=e.target.closest(W_CLICK);if(!btn||btn.disabled)return;
+ const st=wOwner(btn);if(!st)return;
+ W_KINDS[st.kind].click?.(st,btn,btn.dataset);
+});
+document.addEventListener('input',e=>{
+ const el=e.target.closest('[data-wrange]');if(!el)return;
+ const st=wOwner(el);if(!st)return;
+ W_KINDS[st.kind].range?.(st,el,el.dataset.wrange);
+});
+document.addEventListener('change',e=>{
+ const el=e.target.closest('[data-wsel]');if(!el)return;
+ const st=wOwner(el);if(!st)return;
+ W_KINDS[st.kind].select?.(st,el,el.dataset.wsel);
+});
+// One transport serves the whole page, so when anything starts or stops every
+// widget's play button has to agree about what it is now offering.
+document.addEventListener('transportchange',()=>{
+ for(const st of W_STATE.values()){
+  const btn=wHost(st)?.querySelector('[data-wplay]');
+  if(!btn)continue;
+  const on=wPlaying(st);
+  btn.textContent=on?'■ Stop':'▶ '+(st.spec.playLabel||W_PLAY_LABEL[st.kind]||'Play');
+  btn.setAttribute('aria-pressed',String(on));
+  const tap=wHost(st)?.querySelector('[data-wtap]');
+  if(tap)tap.disabled=!on;
+ }
+});
+
+</script><script>
+'use strict';
+/* Widgets for chapter 1: naming notes, intervals, scales, chords, tempo,
+   chord loops and melodic contour. Loads after widgets.js, which creates
+   the W_KINDS registry each block below assigns itself into. */
 /* --- keys: name a note, measure an interval, see a scale, build a chord - */
 W_KINDS.keys={
  init(spec){return {picked:[],key:spec.key??0,scale:spec.scale||'major',
@@ -782,50 +830,6 @@ W_KINDS.keys={
   wRedraw(st);
   if(st.spec.mode==='chord')W_KINDS.keys.play(st);
  }
-};
-
-/* --- steps: a pattern you can edit and hear ---------------------------- */
-W_KINDS.steps={
- init(spec){
-  const total=spec.beats*spec.div;
-  return {tempo:spec.tempo||96,
-   rows:spec.lanes.map(l=>{const a=Array(total).fill(0);(l.on||[]).forEach(i=>{if(i<total)a[i]=1;});return a;})};
- },
- body(st){
-  const {lanes,beats,div}=st.spec, total=beats*div;
-  const cols=`grid-template-columns:76px repeat(${total},minmax(26px,1fr))`;
-  let html=`<div class="w-scroll"><div class="w-grid" style="${cols}"><span></span>`;
-  for(let i=0;i<total;i++)html+=`<span class="count" data-wcol="${i}">${wCount(i,div)}</span>`;
-  st.spec.lanes.forEach((l,li)=>{
-   html+=`<span class="lane">${esc(l.name)}</span>`;
-   for(let i=0;i<total;i++)html+=`<button type="button" class="step ${l.id}" data-wstep="${li},${i}" data-wcol="${i}" aria-pressed="${!!st.rows[li][i]}" aria-label="${esc(l.name)} on count ${wCount(i,div)}"></button>`;
-  });
-  html+='</div></div>';
-  return html+`<div class="w-controls">${wPlayBtn(st,'Play the pattern')}`
-   +`<label>Tempo <input type="range" min="${st.spec.min||60}" max="${st.spec.max||150}" value="${st.tempo}" data-wrange="tempo"></label>`
-   +`<span class="w-read"><output>${st.tempo}</output> BPM</span>`
-   +`<button type="button" class="btn ghost" data-wclear>Clear</button></div>`;
- },
- click(st,btn,d){
-  if(d.wclear!==undefined){st.rows=st.rows.map(r=>r.fill(0).slice());wRedraw(st);wSay(st,'Empty. Click cells to build a pattern of your own, then press play.');return;}
-  if(d.wplay!==undefined){
-   wToggle(st,()=>{
-    const total=st.spec.beats*st.spec.div;
-    StudioAudio.sequence(wTrack(st),total,()=>st.tempo,(i,t)=>{
-     st.rows.forEach((row,li)=>{if(row[i])MusicEngine.hit(st.spec.lanes[li].id,t,st.spec.lanes[li].level??.85);});
-    },i=>wMark(st,i),true,st.spec.div);
-   });
-   return;
-  }
-  if(d.wstep===undefined)return;
-  const [li,i]=d.wstep.split(',').map(Number);
-  st.rows[li][i]=st.rows[li][i]?0:1;
-  btn.setAttribute('aria-pressed',String(!!st.rows[li][i]));
-  if(st.rows[li][i])MusicEngine.hit(st.spec.lanes[li].id,undefined,.9);
-  const hits=st.rows.reduce((n,r)=>n+r.reduce((a,b)=>a+b,0),0);
-  wSay(st,`${esc(st.spec.lanes[li].name)} ${st.rows[li][i]?'on':'off'} at count ${wCount(i,st.spec.div)} · ${hits} hit${hits===1?'':'s'} in the bar.`);
- },
- range(st,el){st.tempo=+el.value;const o=wHost(st)?.querySelector('.w-read output');if(o)o.textContent=st.tempo;}
 };
 
 /* --- tempo: the same bar at different speeds --------------------------- */
@@ -942,6 +946,54 @@ W_KINDS.contour={
   wSay(st,`${filled.length} note${filled.length===1?'':'s'} placed`
    +(filled.length>1?` · the phrase covers ${span+1} scale degrees. ${span<=2?'A narrow shape like this is easy to sing.':span>=6?'That is a wide leap — singable, but it will need breath.':'A comfortable range for a sung hook.'}`:'. Keep going — a hook is usually four to eight notes.'));
  }
+};
+
+</script><script>
+'use strict';
+/* Widgets for chapters 2 and 3: drum patterns, arrangement, the mixer,
+   A/B comparison and timing. */
+/* --- steps: a pattern you can edit and hear ---------------------------- */
+W_KINDS.steps={
+ init(spec){
+  const total=spec.beats*spec.div;
+  return {tempo:spec.tempo||96,
+   rows:spec.lanes.map(l=>{const a=Array(total).fill(0);(l.on||[]).forEach(i=>{if(i<total)a[i]=1;});return a;})};
+ },
+ body(st){
+  const {lanes,beats,div}=st.spec, total=beats*div;
+  const cols=`grid-template-columns:76px repeat(${total},minmax(26px,1fr))`;
+  let html=`<div class="w-scroll"><div class="w-grid" style="${cols}"><span></span>`;
+  for(let i=0;i<total;i++)html+=`<span class="count" data-wcol="${i}">${wCount(i,div)}</span>`;
+  st.spec.lanes.forEach((l,li)=>{
+   html+=`<span class="lane">${esc(l.name)}</span>`;
+   for(let i=0;i<total;i++)html+=`<button type="button" class="step ${l.id}" data-wstep="${li},${i}" data-wcol="${i}" aria-pressed="${!!st.rows[li][i]}" aria-label="${esc(l.name)} on count ${wCount(i,div)}"></button>`;
+  });
+  html+='</div></div>';
+  return html+`<div class="w-controls">${wPlayBtn(st,'Play the pattern')}`
+   +`<label>Tempo <input type="range" min="${st.spec.min||60}" max="${st.spec.max||150}" value="${st.tempo}" data-wrange="tempo"></label>`
+   +`<span class="w-read"><output>${st.tempo}</output> BPM</span>`
+   +`<button type="button" class="btn ghost" data-wclear>Clear</button></div>`;
+ },
+ click(st,btn,d){
+  if(d.wclear!==undefined){st.rows=st.rows.map(r=>r.fill(0).slice());wRedraw(st);wSay(st,'Empty. Click cells to build a pattern of your own, then press play.');return;}
+  if(d.wplay!==undefined){
+   wToggle(st,()=>{
+    const total=st.spec.beats*st.spec.div;
+    StudioAudio.sequence(wTrack(st),total,()=>st.tempo,(i,t)=>{
+     st.rows.forEach((row,li)=>{if(row[i])MusicEngine.hit(st.spec.lanes[li].id,t,st.spec.lanes[li].level??.85);});
+    },i=>wMark(st,i),true,st.spec.div);
+   });
+   return;
+  }
+  if(d.wstep===undefined)return;
+  const [li,i]=d.wstep.split(',').map(Number);
+  st.rows[li][i]=st.rows[li][i]?0:1;
+  btn.setAttribute('aria-pressed',String(!!st.rows[li][i]));
+  if(st.rows[li][i])MusicEngine.hit(st.spec.lanes[li].id,undefined,.9);
+  const hits=st.rows.reduce((n,r)=>n+r.reduce((a,b)=>a+b,0),0);
+  wSay(st,`${esc(st.spec.lanes[li].name)} ${st.rows[li][i]?'on':'off'} at count ${wCount(i,st.spec.div)} · ${hits} hit${hits===1?'':'s'} in the bar.`);
+ },
+ range(st,el){st.tempo=+el.value;const o=wHost(st)?.querySelector('.w-read output');if(o)o.textContent=st.tempo;}
 };
 
 /* --- arrange: which layers play in which section ---------------------- */
@@ -1141,49 +1193,6 @@ W_KINDS.tap={
  },
  range(st,el){st.tempo=+el.value;const o=wHost(st)?.querySelector('.w-read output');if(o)o.textContent=st.tempo;}
 };
-
-/* ========================================================= plumbing */
-function drawWidget(spec){
- if(!spec||!Object.hasOwn(W_KINDS,spec.kind))return '';
- const kind=W_KINDS[spec.kind], id='w'+(++wNext);
- const st=Object.assign({id,spec,kind:spec.kind},kind.init?kind.init(spec):{});
- W_STATE.set(id,st);
- return `<section class="widget" data-w="${id}" data-wkind="${esc(spec.kind)}" aria-label="${esc(spec.title||'Interactive')}">`
-  +`<div class="widget-top"><span class="micro">${esc(spec.eyebrow||'Try it here')}</span><h3>${esc(spec.title||'')}</h3></div>`
-  +(spec.hint?`<p class="widget-hint">${spec.hint}</p>`:'')
-  +`<div class="widget-body">${kind.body(st)}</div>`
-  +`<p class="widget-say" data-w-say role="status">${spec.say||''}</p></section>`;
-}
-
-const W_CLICK='[data-wkey],[data-wstep],[data-wplay],[data-wpill],[data-wcell],[data-wtoggle],[data-wtap],[data-wab],[data-wclear]';
-document.addEventListener('click',e=>{
- const btn=e.target.closest(W_CLICK);if(!btn||btn.disabled)return;
- const st=wOwner(btn);if(!st)return;
- W_KINDS[st.kind].click?.(st,btn,btn.dataset);
-});
-document.addEventListener('input',e=>{
- const el=e.target.closest('[data-wrange]');if(!el)return;
- const st=wOwner(el);if(!st)return;
- W_KINDS[st.kind].range?.(st,el,el.dataset.wrange);
-});
-document.addEventListener('change',e=>{
- const el=e.target.closest('[data-wsel]');if(!el)return;
- const st=wOwner(el);if(!st)return;
- W_KINDS[st.kind].select?.(st,el,el.dataset.wsel);
-});
-// One transport serves the whole page, so when anything starts or stops every
-// widget's play button has to agree about what it is now offering.
-document.addEventListener('transportchange',()=>{
- for(const st of W_STATE.values()){
-  const btn=wHost(st)?.querySelector('[data-wplay]');
-  if(!btn)continue;
-  const on=wPlaying(st);
-  btn.textContent=on?'■ Stop':'▶ '+(st.spec.playLabel||W_PLAY_LABEL[st.kind]||'Play');
-  btn.setAttribute('aria-pressed',String(on));
-  const tap=wHost(st)?.querySelector('[data-wtap]');
-  if(tap)tap.disabled=!on;
- }
-});
 
 </script><script>
 'use strict';
@@ -2626,6 +2635,14 @@ const num=n=>String(n).padStart(2,'0');
 let storageOK=true;
 function read(k,defaultValue){try{return JSON.parse(localStorage.getItem('roomtone.v1.'+k)??'null')??defaultValue;}catch{return defaultValue;}}
 function save(k,v){try{localStorage.setItem('roomtone.v1.'+k,JSON.stringify(v));}catch{storageOK=false;}}
+
+// Shared by the practice room, the deck and the rhythm editor, so they live
+// here rather than in any one of them.
+const degrees=[.5,1,2,4];
+const inRange=(v,lo,hi,fallback)=>Number.isFinite(v)&&v>=lo&&v<=hi?v:fallback;
+const stepsPerBar=meter=>meters[meter].beats*meters[meter].div;
+const validDrumRows=(rows,bar)=>Array.isArray(rows)&&rows.length===kit.length
+ &&rows.every(row=>Array.isArray(row)&&row.length===bar*4&&row.every(x=>x===0||x===1));
 let done=new Set((Array.isArray(read('lessons',[]))?read('lessons',[]):[]).filter(i=>Number.isInteger(i)&&i>=0&&i<course.length));
 let device=read('device','Mac')==='Touch'?'Touch':'Mac', bpm=96,scaleKey='C major',wave='triangle',ear=null, clickOn=false;
 const scales={'C major':[60,62,64,65,67,69,71,72],'G major':[67,69,71,72,74,76,78,79],'A natural minor':[69,71,72,74,76,77,79,81]};
@@ -2789,6 +2806,11 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden)StudioAudio
 
 </script><script>
 'use strict';
+// The typing keyboard: which computer key sounds which note, what is held
+// down, and the pedal that keeps it held. Shared by the practice room, the
+// Freestyle deck and the piano room, which each draw their own keybed.
+let octave=0;
+let pedalDown=false;
 // Each bank is ordered by semitone, including the final C of the upper bank.
 const pianoBanks=[
  ['Q','2','W','3','E','R','5','T','6','Y','7','U'],
@@ -2798,160 +2820,7 @@ const mappedKeys=pianoBanks.flat();
 const blackSteps=new Set([1,3,6,8,10]);
 const keyboardBase=()=>48+12*octave;
 const activeKeys=new Map();
-const liveSounds=['piano','bass','pluck','pad','organ','bell','lead'];
-const chordBook={...harmony,Dm:{notes:[57,62,65],bass:38},Em:{notes:[59,64,67],bass:40},Bdim:{notes:[59,62,65],bass:35}};
-const layerNames=['Drums','Bass','Chords','Arpeggio'];
-// Each melodic channel plays a selectable part, so a deck can be performed
-// rather than only muted and unmuted. A style decides WHEN its layer speaks;
-// density thins what it plays; transpose moves the whole harmony.
-const bassStyles={
- roots:{name:'Roots',at:(b,o,div,inside,bar)=>inside===bar-2?{i:7,d:1.35/div}:(o===0&&b%2===0?{i:0,d:.76}:null)},
- octaves:{name:'Octave bounce',at:(b,o)=>o===0?{i:b%2?12:0,d:.6}:null},
- walking:{name:'Walking',at:(b,o)=>o===0?{i:[0,7,3,10][b%4],d:.58}:null},
- push:{name:'Offbeat push',at:(b,o,div)=>o===Math.round(div/2)?{i:0,d:.44}:null},
- driving:{name:'Driving eighths',at:(b,o,div)=>o%Math.max(1,Math.round(div/2))===0?{i:o?12:0,d:.3}:null}
-};
-const chordStyles={
- pad:{name:'Sustained pad',voice:'pad',level:.14,dur:(s,beats)=>s*beats-.10,at:(b,o,div,inside)=>inside===0},
- stabs:{name:'Backbeat stabs',voice:'organ',level:.17,dur:s=>s*.26,at:(b,o)=>o===0&&b%2===1},
- pulse:{name:'Eighth pulse',voice:'organ',level:.12,dur:s=>s*.2,at:(b,o,div)=>o%Math.max(1,Math.round(div/2))===0},
- skank:{name:'Offbeat skank',voice:'organ',level:.15,dur:s=>s*.18,at:(b,o,div)=>o===Math.round(div/2)}
-};
-const arpStyles={
- updown:{name:'Up & down',order:[0,1,2,1]},
- up:{name:'Climbing',order:[0,1,2,3]},
- down:{name:'Falling',order:[3,2,1,0]},
- wide:{name:'Wide leaps',order:[0,2,1,3]},
- pedal:{name:'Pedal tone',order:[0,1,0,2]}
-};
-const arpRates=[{v:1,name:'1 per beat'},{v:2,name:'2 per beat'},{v:4,name:'4 per beat'}];
-const sceneSets={
- Intro:{layers:[1,0,1,0],styles:{bass:'roots',chords:'pad',arp:'updown'},density:[65,100,100,100],arpRate:1},
- Groove:{layers:[1,1,1,0],styles:{bass:'roots',chords:'stabs',arp:'updown'},density:[100,100,100,100],arpRate:2},
- Lift:{layers:[1,1,1,1],styles:{bass:'driving',chords:'pulse',arp:'up'},density:[100,100,100,100],arpRate:4},
- Break:{layers:[0,0,1,1],styles:{bass:'push',chords:'pad',arp:'down'},density:[100,100,70,100],arpRate:2},
- Outro:{layers:[1,0,1,0],styles:{bass:'roots',chords:'pad',arp:'down'},density:[40,100,100,100],arpRate:1}
-};
-const bassVoices=['bass','sine','pluck','sawtooth'];
-const bassNotes={root:'Root',third:'Third',fifth:'Fifth',seventh:'Flat seventh',octave:'Octave'};
-const bassStyleNotes={0:'root',3:'third',7:'fifth',10:'seventh',12:'octave'};
-const genreBassParts={
- 'Pop & soul':'octaves','Hip-hop & bass':'roots','Club & electronic':'push','Rock & guitar':'driving',
- 'Jazz, folk & blues':'walking','Caribbean & Latin':'push','African grooves':'octaves','Indonesian grooves':'driving'
-};
-// Deterministic spread, so a thinned part repeats the same way each loop
-// instead of flickering at random.
-const spread=(a,b)=>{let x=(a*73856093^b*19349663)>>>0;x^=x<<13;x>>>=0;x^=x>>>17;x^=x<<5;return (x>>>0)/4294967296;};
-const degrees=[.5,1,2,4];
-const inRange=(v,lo,hi,fallback)=>Number.isFinite(v)&&v>=lo&&v<=hi?v:fallback;
-const stepsPerBar=meter=>meters[meter].beats*meters[meter].div;
-const validDrumRows=(rows,bar)=>Array.isArray(rows)&&rows.length===kit.length
- &&rows.every(row=>Array.isArray(row)&&row.length===bar*4&&row.every(x=>x===0||x===1));
-const knownBassStyle=id=>id==='custom'||Object.hasOwn(bassStyles,id);
-
-function readScene(saved,preset){
- const layerLevels=[95,85,75,66];
- const drum=saved.drums;
- const drums=drum&&Object.hasOwn(meters,drum.meter)&&validDrumRows(drum.rows,stepsPerBar(drum.meter))
-  ?{meter:drum.meter,size:degrees.includes(drum.size)?drum.size:1,swing:inRange(drum.swing,50,67,50),
-    rows:drum.rows,name:typeof drum.name==='string'?drum.name.slice(0,85):'Custom beat',
-    templateId:beatsLibrary.some(t=>t.id===drum.templateId)?drum.templateId:null}
-  :null;
- const limit=drums?stepsPerBar(drums.meter)*4:0;
- const bassLine=Object.fromEntries(Object.entries(saved.bassLine||{}).filter(([step,note])=>
-  /^\d+$/.test(step)&&+step<limit&&Object.hasOwn(bassNotes,note)));
- return {
-  layers:preset.layers.map((on,i)=>Boolean(saved.layers?.[i]??on)),
-  levels:layerLevels.map((level,i)=>inRange(saved.levels?.[i],0,100,level)),
-  styles:{
-   bass:knownBassStyle(saved.styles?.bass)?saved.styles.bass:preset.styles.bass,
-   chords:Object.hasOwn(chordStyles,saved.styles?.chords)?saved.styles.chords:preset.styles.chords,
-   arp:Object.hasOwn(arpStyles,saved.styles?.arp)?saved.styles.arp:preset.styles.arp
-  },
-  density:preset.density.map((density,i)=>inRange(saved.density?.[i],20,100,density)),
-  arpRate:arpRates.some(r=>r.v===saved.arpRate)?saved.arpRate:preset.arpRate,
-  drums,bassLine,bassVoice:bassVoices.includes(saved.bassVoice)?saved.bassVoice:'bass'
- };
-}
-
-const kept=read('freestyle',{})||{};
-const previousScene=Object.keys(sceneSets).find(name=>{
- const preset=sceneSets[name];
- return preset.arpRate===kept.arpRate&&preset.layers.every((on,i)=>Boolean(on)===kept.layers?.[i])
-  &&preset.density.every((density,i)=>density===kept.density?.[i])
-  &&Object.entries(preset.styles).every(([part,style])=>kept.styles?.[part]===style);
-});
-let activeScene=Object.hasOwn(sceneSets,kept.activeScene)?kept.activeScene:previousScene||'Groove';
-const sceneBank=Object.fromEntries(Object.entries(sceneSets).map(([name,preset])=>[
- name,readScene(kept.scenes?.[name]??(name===activeScene&&!kept.scenes?kept:{}),preset)
-]));
-const mix={
- ...sceneBank[activeScene],
- chords:[0,1,2,3].map((_,i)=>Object.hasOwn(chordBook,kept.chords?.[i])?kept.chords[i]:['C','G','Am','F'][i]),
- blend:inRange(kept.blend,0,100,50),filter:inRange(kept.filter,0,100,100),
- sound:liveSounds.includes(kept.sound)?kept.sound:'pluck',
- transpose:inRange(kept.transpose,-12,12,0)
-};
-const thins=(layer,step)=>mix.density[layer]>=100||spread(step+7,layer+3)<mix.density[layer]/100;
-// The kick and snare carry the pulse, so thinning only touches the rest of the kit.
-const keepHit=(id,r,step)=>mix.density[0]>=100||id==='kick'||id==='snare'||spread(step*31+r,r+5)<mix.density[0]/100;
-// ---- Piano room -------------------------------------------------------------
-// A wider keyboard with a sustain pedal, touch control and MIDI input, for
-// playing pieces rather than sketching loops. The typing window stays 25 keys;
-// the displayed range is larger and follows it.
-const pianoVoices=['grand','piano','organ','bell'];
-const pianoSizes=[25,37,49,61];
-const touchLevels=[.11,.17,.25,.33,.42], touchCutoffs=[1500,2200,3100,4300,5900];
-const touchNames=['Pianissimo','Piano','Mezzo','Forte','Fortissimo'];
-const keptPiano=read('piano',{})||{};
-const piano={
- voice:pianoVoices.includes(keptPiano.voice)?keptPiano.voice:'grand',
- size:pianoSizes.includes(keptPiano.size)?keptPiano.size:49,
- low:inRange(keptPiano.low,12,96,36),
- touch:inRange(keptPiano.touch,1,5,3)
-};
-let pedalDown=false, midiStatus='Not connected.', midiBound=false;
 const sustained=new Set();
-function savePiano(){save('piano',piano);}
-// Keep the 25 keys the computer maps inside the range actually on screen,
-// otherwise typing would hit notes that have no key to light up.
-function fitWindow(){
- const bottom=keyboardBase(), top=bottom+24;
- let low=piano.low;
- if(bottom<low)low=bottom;
- if(top>low+piano.size-1)low=top-piano.size+1;
- low=12*Math.floor(low/12);
- if(top>low+piano.size-1)low=12*Math.ceil((top-piano.size+1)/12);
- piano.low=Math.max(12,Math.min(108-piano.size,low));
-}
-const savedBeat=read('groove',{})||{};
-let meterName=Object.hasOwn(meters,savedBeat.meter)?savedBeat.meter:'4/4';
-let gridSize=degrees.includes(savedBeat.size)?savedBeat.size:1;
-let swing=inRange(savedBeat.swing,50,67,50);
-bpm=inRange(savedBeat.tempo,45,210,96);
-const getBar=()=>stepsPerBar(meterName);
-const getSteps=()=>getBar()*gridSize;
-const getStride=()=>gridSize===.5?2:1;
-const validRows=validDrumRows(savedBeat.rows,getBar());
-let beat=validRows?savedBeat.rows:patternFrom({...basic,meter:meterName});
-let grooveName=validRows&&typeof savedBeat.name==='string'?savedBeat.name.slice(0,85):'Backbeat';
-let presetId=beatsLibrary.some(t=>t.id===savedBeat.preset)?savedBeat.preset:'house',previousGroove=null;
-let deckPresetId=mix.drums?.templateId||presetId;
-let rhythmOpen=false,rhythmPart='drums',rhythmBar=0,rhythmTarget='both';
-const rhythmUndo={};
-let octave=0,drawBar=0,drawBeat=0,captureDisplay='';
-function saveBeat(){save('groove',{meter:meterName,size:gridSize,swing,tempo:bpm,rows:beat,name:grooveName,preset:presetId});}
-function saveMix(){
- const {layers,levels,styles,density,arpRate,drums,bassLine,bassVoice}=mix;
- sceneBank[activeScene]={layers,levels,styles,density,arpRate,drums,bassLine,bassVoice};
- save('freestyle',{...mix,activeScene,scenes:sceneBank});
- MusicEngine.setMix(mix);
-}
-function clockLabel(seconds){const s=Math.floor(seconds);return Math.floor(s/60)+':'+String(s%60).padStart(2,'0');}
-function describeSize(steps,bar){
- const coarse=steps===bar/2,note=coarse?'eighths':'sixteenths',bars=coarse?1:steps/bar;
- return `${steps} steps · ${bars} ${bars===1?'bar':'bars'} · ${note}`;
-}
 function keyboard(mini=false){
  const first=keyboardBase();
  const banks=pianoBanks.map((bindings,bank)=>{
@@ -3023,6 +2892,41 @@ function shiftOctave(amount){
  if($('#piano-room'))refreshPiano();
  const help=$('.key-controls');if(help)help.outerHTML=keyboardHelp();
  const display=$('#synth-readout')||$('#live-note')||$('#key-feedback');if(display)display.textContent='Keyboard starts on '+pitchLabel(keyboardBase());
+}
+function pianoShortcut(e){
+ const code=e.code||'';
+ if(/^Key[A-Z]$/.test(code))return code.slice(3);
+ if(/^Digit[0-9]$/.test(code))return code.slice(5);
+ if(code.startsWith('Numpad'))return code;
+ if(code==='Comma')return ',';
+ if(code==='BracketLeft')return '[';
+ if(code==='BracketRight')return ']';
+ const shiftedDigit='!@#$%^&*('.indexOf(e.key);
+ return e.shiftKey&&shiftedDigit>=0?String(shiftedDigit+1):e.key.toUpperCase();
+}
+function typingTarget(el){return el?.closest?.('input,textarea,select,[contenteditable]:not([contenteditable="false"]),[role="textbox"]');}
+
+</script><script>
+'use strict';
+// The practice room: one drum pattern you can edit, time, swing and hear,
+// plus the genre library it can be loaded from and exported to.
+const savedBeat=read('groove',{})||{};
+let meterName=Object.hasOwn(meters,savedBeat.meter)?savedBeat.meter:'4/4';
+let gridSize=degrees.includes(savedBeat.size)?savedBeat.size:1;
+let swing=inRange(savedBeat.swing,50,67,50);
+bpm=inRange(savedBeat.tempo,45,210,96);
+const getBar=()=>stepsPerBar(meterName);
+const getSteps=()=>getBar()*gridSize;
+const getStride=()=>gridSize===.5?2:1;
+const validRows=validDrumRows(savedBeat.rows,getBar());
+let beat=validRows?savedBeat.rows:patternFrom({...basic,meter:meterName});
+let grooveName=validRows&&typeof savedBeat.name==='string'?savedBeat.name.slice(0,85):'Backbeat';
+let presetId=beatsLibrary.some(t=>t.id===savedBeat.preset)?savedBeat.preset:'house',previousGroove=null;
+function saveBeat(){save('groove',{meter:meterName,size:gridSize,swing,tempo:bpm,rows:beat,name:grooveName,preset:presetId});}
+function clockLabel(seconds){const s=Math.floor(seconds);return Math.floor(s/60)+':'+String(s%60).padStart(2,'0');}
+function describeSize(steps,bar){
+ const coarse=steps===bar/2,note=coarse?'eighths':'sixteenths',bars=coarse?1:steps/bar;
+ return `${steps} steps · ${bars} ${bars===1?'bar':'bars'} · ${note}`;
 }
 function selectedPreset(deck=false){return beatsLibrary.find(t=>t.id===(deck?deckPresetId:presetId))||beatsLibrary[0];}
 function genrePicker(deck=false){
@@ -3109,65 +3013,125 @@ function revertLoad(){if(!previousGroove)return;const was=StudioAudio.current,p=
  meterName=p.meterName;gridSize=p.gridSize;swing=p.swing;bpm=p.bpm;beat=p.beat;grooveName=p.grooveName;syncGrooveUI(was);
 }
 const practiceDrums=()=>({meter:meterName,size:gridSize,swing,rows:beat,name:grooveName,templateId:null});
+function exportBeat(isTemplate,deck=false){
+ const t=selectedPreset(deck);
+ const meter=isTemplate?t.meter:meterName,m=meters[meter],name=isTemplate?t.name:grooveName;
+ const bytes=makeBeatMidi(isTemplate?patternFrom(t):beat,meter,isTemplate?t.bpm:bpm,isTemplate?t.swing:swing,
+  isTemplate?m.beats*m.div*(t.next?2:1):getSteps(),isTemplate?1:getStride(),name);
+ const url=URL.createObjectURL(new Blob([bytes],{type:'audio/midi'}));
+ const a=document.createElement('a');a.href=url;a.download='roomtone-'+name.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/-$/,'')+'.mid';
+ document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),30000);
+}
+
+</script><script>
+'use strict';
+// The Freestyle deck: four layers over a chord loop, the scenes that recall
+// a whole mix, and recording the result. Loads after groove.js, because
+// deckPresetId falls back to the practice room's own selection.
+const liveSounds=['piano','bass','pluck','pad','organ','bell','lead'];
+const chordBook={...harmony,Dm:{notes:[57,62,65],bass:38},Em:{notes:[59,64,67],bass:40},Bdim:{notes:[59,62,65],bass:35}};
+const layerNames=['Drums','Bass','Chords','Arpeggio'];
+// Each melodic channel plays a selectable part, so a deck can be performed
+// rather than only muted and unmuted. A style decides WHEN its layer speaks;
+// density thins what it plays; transpose moves the whole harmony.
+const bassStyles={
+ roots:{name:'Roots',at:(b,o,div,inside,bar)=>inside===bar-2?{i:7,d:1.35/div}:(o===0&&b%2===0?{i:0,d:.76}:null)},
+ octaves:{name:'Octave bounce',at:(b,o)=>o===0?{i:b%2?12:0,d:.6}:null},
+ walking:{name:'Walking',at:(b,o)=>o===0?{i:[0,7,3,10][b%4],d:.58}:null},
+ push:{name:'Offbeat push',at:(b,o,div)=>o===Math.round(div/2)?{i:0,d:.44}:null},
+ driving:{name:'Driving eighths',at:(b,o,div)=>o%Math.max(1,Math.round(div/2))===0?{i:o?12:0,d:.3}:null}
+};
+const chordStyles={
+ pad:{name:'Sustained pad',voice:'pad',level:.14,dur:(s,beats)=>s*beats-.10,at:(b,o,div,inside)=>inside===0},
+ stabs:{name:'Backbeat stabs',voice:'organ',level:.17,dur:s=>s*.26,at:(b,o)=>o===0&&b%2===1},
+ pulse:{name:'Eighth pulse',voice:'organ',level:.12,dur:s=>s*.2,at:(b,o,div)=>o%Math.max(1,Math.round(div/2))===0},
+ skank:{name:'Offbeat skank',voice:'organ',level:.15,dur:s=>s*.18,at:(b,o,div)=>o===Math.round(div/2)}
+};
+const arpStyles={
+ updown:{name:'Up & down',order:[0,1,2,1]},
+ up:{name:'Climbing',order:[0,1,2,3]},
+ down:{name:'Falling',order:[3,2,1,0]},
+ wide:{name:'Wide leaps',order:[0,2,1,3]},
+ pedal:{name:'Pedal tone',order:[0,1,0,2]}
+};
+const arpRates=[{v:1,name:'1 per beat'},{v:2,name:'2 per beat'},{v:4,name:'4 per beat'}];
+const sceneSets={
+ Intro:{layers:[1,0,1,0],styles:{bass:'roots',chords:'pad',arp:'updown'},density:[65,100,100,100],arpRate:1},
+ Groove:{layers:[1,1,1,0],styles:{bass:'roots',chords:'stabs',arp:'updown'},density:[100,100,100,100],arpRate:2},
+ Lift:{layers:[1,1,1,1],styles:{bass:'driving',chords:'pulse',arp:'up'},density:[100,100,100,100],arpRate:4},
+ Break:{layers:[0,0,1,1],styles:{bass:'push',chords:'pad',arp:'down'},density:[100,100,70,100],arpRate:2},
+ Outro:{layers:[1,0,1,0],styles:{bass:'roots',chords:'pad',arp:'down'},density:[40,100,100,100],arpRate:1}
+};
+const bassVoices=['bass','sine','pluck','sawtooth'];
+const bassNotes={root:'Root',third:'Third',fifth:'Fifth',seventh:'Flat seventh',octave:'Octave'};
+const bassStyleNotes={0:'root',3:'third',7:'fifth',10:'seventh',12:'octave'};
+const genreBassParts={
+ 'Pop & soul':'octaves','Hip-hop & bass':'roots','Club & electronic':'push','Rock & guitar':'driving',
+ 'Jazz, folk & blues':'walking','Caribbean & Latin':'push','African grooves':'octaves','Indonesian grooves':'driving'
+};
+// Deterministic spread, so a thinned part repeats the same way each loop
+// instead of flickering at random.
+const spread=(a,b)=>{let x=(a*73856093^b*19349663)>>>0;x^=x<<13;x>>>=0;x^=x>>>17;x^=x<<5;return (x>>>0)/4294967296;};
+const knownBassStyle=id=>id==='custom'||Object.hasOwn(bassStyles,id);
+
+function readScene(saved,preset){
+ const layerLevels=[95,85,75,66];
+ const drum=saved.drums;
+ const drums=drum&&Object.hasOwn(meters,drum.meter)&&validDrumRows(drum.rows,stepsPerBar(drum.meter))
+  ?{meter:drum.meter,size:degrees.includes(drum.size)?drum.size:1,swing:inRange(drum.swing,50,67,50),
+    rows:drum.rows,name:typeof drum.name==='string'?drum.name.slice(0,85):'Custom beat',
+    templateId:beatsLibrary.some(t=>t.id===drum.templateId)?drum.templateId:null}
+  :null;
+ const limit=drums?stepsPerBar(drums.meter)*4:0;
+ const bassLine=Object.fromEntries(Object.entries(saved.bassLine||{}).filter(([step,note])=>
+  /^\d+$/.test(step)&&+step<limit&&Object.hasOwn(bassNotes,note)));
+ return {
+  layers:preset.layers.map((on,i)=>Boolean(saved.layers?.[i]??on)),
+  levels:layerLevels.map((level,i)=>inRange(saved.levels?.[i],0,100,level)),
+  styles:{
+   bass:knownBassStyle(saved.styles?.bass)?saved.styles.bass:preset.styles.bass,
+   chords:Object.hasOwn(chordStyles,saved.styles?.chords)?saved.styles.chords:preset.styles.chords,
+   arp:Object.hasOwn(arpStyles,saved.styles?.arp)?saved.styles.arp:preset.styles.arp
+  },
+  density:preset.density.map((density,i)=>inRange(saved.density?.[i],20,100,density)),
+  arpRate:arpRates.some(r=>r.v===saved.arpRate)?saved.arpRate:preset.arpRate,
+  drums,bassLine,bassVoice:bassVoices.includes(saved.bassVoice)?saved.bassVoice:'bass'
+ };
+}
+
+const kept=read('freestyle',{})||{};
+const previousScene=Object.keys(sceneSets).find(name=>{
+ const preset=sceneSets[name];
+ return preset.arpRate===kept.arpRate&&preset.layers.every((on,i)=>Boolean(on)===kept.layers?.[i])
+  &&preset.density.every((density,i)=>density===kept.density?.[i])
+  &&Object.entries(preset.styles).every(([part,style])=>kept.styles?.[part]===style);
+});
+let activeScene=Object.hasOwn(sceneSets,kept.activeScene)?kept.activeScene:previousScene||'Groove';
+const sceneBank=Object.fromEntries(Object.entries(sceneSets).map(([name,preset])=>[
+ name,readScene(kept.scenes?.[name]??(name===activeScene&&!kept.scenes?kept:{}),preset)
+]));
+const mix={
+ ...sceneBank[activeScene],
+ chords:[0,1,2,3].map((_,i)=>Object.hasOwn(chordBook,kept.chords?.[i])?kept.chords[i]:['C','G','Am','F'][i]),
+ blend:inRange(kept.blend,0,100,50),filter:inRange(kept.filter,0,100,100),
+ sound:liveSounds.includes(kept.sound)?kept.sound:'pluck',
+ transpose:inRange(kept.transpose,-12,12,0)
+};
+const thins=(layer,step)=>mix.density[layer]>=100||spread(step+7,layer+3)<mix.density[layer]/100;
+// The kick and snare carry the pulse, so thinning only touches the rest of the kit.
+const keepHit=(id,r,step)=>mix.density[0]>=100||id==='kick'||id==='snare'||spread(step*31+r,r+5)<mix.density[0]/100;
+let deckPresetId=mix.drums?.templateId||presetId;
+let drawBar=0,drawBeat=0,captureDisplay='';
+function saveMix(){
+ const {layers,levels,styles,density,arpRate,drums,bassLine,bassVoice}=mix;
+ sceneBank[activeScene]={layers,levels,styles,density,arpRate,drums,bassLine,bassVoice};
+ save('freestyle',{...mix,activeScene,scenes:sceneBank});
+ MusicEngine.setMix(mix);
+}
 const deckDrums=()=>mix.drums||practiceDrums();
 const copyDrums=drums=>({...drums,rows:drums.rows.map(row=>row.slice())});
 const drumStride=drums=>drums.size===.5?2:1;
 const loopSpan=drums=>stepsPerBar(drums.meter)*Math.max(1,drums.size);
-
-function rememberRhythm(){
- rhythmUndo[activeScene]={
-  drums:mix.drums&&copyDrums(mix.drums),bassLine:{...mix.bassLine},
-  bassStyle:mix.styles.bass,bassVoice:mix.bassVoice,layers:mix.layers.slice(0,2)
- };
-}
-function setDeckDrums(drums){
- const oldBar=stepsPerBar(deckDrums().meter),newBar=stepsPerBar(drums.meter);
- if(oldBar!==newBar){
-  // Keep each bass note in its bar and move it to the nearest step in the new meter.
-  mix.bassLine=Object.fromEntries(Object.entries(mix.bassLine).map(([step,note])=>[
-   Math.floor(step/oldBar)*newBar+Math.min(newBar-1,Math.round(step%oldBar*newBar/oldBar)),note
-  ]));
- }
- mix.drums=drums;
-}
-function syncDeckRhythm(previousMeter){
- saveMix();
- refreshRhythmEditor();
- if(StudioAudio.current==='freestyle'&&previousMeter!==deckDrums().meter)startDecks();
- else updateBoard();
-}
-function changeRhythm(change){
- const meter=deckDrums().meter;
- rememberRhythm();
- change();
- syncDeckRhythm(meter);
-}
-function undoRhythm(){
- const undo=rhythmUndo[activeScene];
- if(!undo)return;
- const meter=deckDrums().meter;
- mix.drums=undo.drums;
- mix.bassLine=undo.bassLine;
- mix.styles.bass=undo.bassStyle;
- mix.bassVoice=undo.bassVoice;
- mix.layers.splice(0,2,...undo.layers);
- delete rhythmUndo[activeScene];
- syncDeckRhythm(meter);
-}
-function loadDeckTemplate(target){
- const t=selectedPreset(true);
- changeRhythm(()=>{
-  if(target!=='bass'){
-   setDeckDrums({meter:t.meter,size:t.next?2:1,swing:t.swing,rows:patternFrom(t),name:t.name,templateId:t.id});
-   mix.layers[0]=true;
-  }
-  if(target!=='drums'){
-   mix.styles.bass=genreBassParts[t.family];
-   mix.bassVoice='bass';
-   mix.layers[1]=true;
-  }
- });
-}
 function shownBassLine(drums){
  if(mix.styles.bass==='custom')return mix.bassLine;
  const m=meters[drums.meter],bar=stepsPerBar(drums.meter),style=bassStyles[mix.styles.bass],notes={};
@@ -3288,6 +3252,95 @@ function mixerDeck(title,kind,indices){
  return `<section class="mix-deck ${kind}"><div class="deck-title"><span class="deck-letter" aria-hidden="true">${letter}</span><div><div class="micro">Deck ${letter}</div><h3>${title}</h3></div></div><div class="channel-list">${indices.map(i=>`<div class="channel"><button class="layer-key" data-layer="${i}" aria-pressed="${mix.layers[i]}"><i></i>${layerNames[i]}<small>${mix.layers[i]?'On':'Off'}</small></button><label><span>${layerNames[i]} level</span><input type="range" min="0" max="100" value="${mix.levels[i]}" data-level="${i}"></label>${partControls(i)}</div>`).join('')}</div>
  ${rhythm?`<button class="deck-edit" data-rhythm-edit aria-controls="rhythm-editor" aria-expanded="${rhythmOpen}">${rhythmOpen?'Close rhythm editor':'Edit drums &amp; bass'}</button>`:''}</section>`;
 }
+function freestylePage(){
+ return bread('Freestyle studio')+heading('Freestyle studio','Build a groove on two decks. Fade between rhythm and harmony, play a melody with your keyboard, and capture the whole performance.')+
+ `<section id="freestyle-board">
+ <div class="booth-top"><div><span class="micro">Live mix</span><h2 id="board-groove">${esc(showDeckGroove())}</h2></div>
+  <div class="booth-actions"><button class="btn warm" data-deck-play>▶ Start decks</button><button class="record-btn" data-record>● Record take</button></div></div>
+ <div class="booth-clock"><span id="deck-position">Ready · 4-bar progression</span><div class="bar-markers" aria-hidden="true">${[1,2,3,4].map(()=>'<i data-bar-marker></i>').join('')}</div></div>
+ <div class="scene-row" role="group" aria-label="Scenes"><span class="micro" aria-hidden="true">Scenes</span>
+  ${Object.keys(sceneSets).map(name=>`<button class="scene" data-scene="${name}" aria-pressed="${name===activeScene}">${name}</button>`).join('')}</div>
+ <div class="decks">
+  ${mixerDeck('Rhythm section','rhythm-deck',[0,1])}
+  <div class="mix-center"><span class="micro">Mixer</span>
+   <label>Crossfader <input data-mix="blend" type="range" min="0" max="100" value="${mix.blend}"><span class="range-ends"><small>A · Rhythm</small><small>B · Harmony</small></span></label>
+   ${tempoControl('Tempo for all scenes')}
+   <label>Low-pass filter <input data-mix="filter" type="range" min="0" max="100" value="${mix.filter}"><span class="range-ends"><small>Dark</small><small>Open</small></span></label>
+   <label>Transpose <span id="transpose-read">${mix.transpose>0?'+':''}${mix.transpose} st</span><input data-mix="transpose" type="range" min="-12" max="12" value="${mix.transpose}"><span class="range-ends"><small>-12</small><small>+12</small></span></label>
+  </div>
+  ${mixerDeck('Harmony section','harmony-deck',[2,3])}
+ </div>
+ <section id="rhythm-editor" class="rhythm-editor" aria-label="Deck A rhythm editor" ${rhythmOpen?'':'hidden'}>${rhythmOpen?rhythmEditorBody():''}</section>
+ </section>
+ <div class="free-columns"><div class="stack"><section class="panel live-panel"><div class="row-between"><h2>Live instrument</h2><label>Voice <select data-live-sound>${liveSounds.map(k=>`<option value="${k}" ${mix.sound===k?'selected':''}>${voices[k].name}</option>`).join('')}</select></label></div><p>Play over the decks. Hold Q, E and T for a low C-major chord, then play Z, X and C over it with your other hand.</p>${keyboard()}${keyboardHelp()}<output id="live-note" class="compact">Ready for a note</output><div class="divider"></div><h3>Drum pads</h3><p class="compact">Hold Shift and press 1–9 for drum hits. A numeric keypad or a tap on a pad works too.</p><div class="hot-pads">${kit.map(([id,label],i)=>`<button data-hit="${id}" class="hot-pad"><kbd>⇧${i+1}</kbd>${label}</button>`).join('')}</div></section>
+ <section class="panel progression"><h2>Write the chord loop</h2><p>Choose one chord per bar. Bass, chords and arpeggio follow the same changes. Changes are heard the next time each part plays.</p><div class="chord-strip">${mix.chords.map((name,i)=>`<label>Bar ${i+1}<select data-progression="${i}">${Object.keys(chordBook).map(c=>`<option ${c===name?'selected':''}>${c}</option>`).join('')}</select></label>`).join('')}</div>${link('practice/beat','Open Practice beat grid')}</section></div><div class="stack"><section class="panel recorder-panel"><div class="row-between"><h2>Your take</h2><output class="clock" id="capture-time">${clockLabel(MusicEngine.recording?MusicEngine.seconds:0)}</output></div><p>Record up to three minutes of the decks, live notes, drum pads and mixer moves. Download the WAV before closing the tab.</p><div id="last-take">${takePlayer()}</div><p id="take-status" role="status">${esc(captureDisplay)}</p></section></div></div>`;
+}
+function pressPad(id){
+ const stage=!!$('#freestyle-board');if(stage&&MusicEngine.setup())MusicEngine.setMix(mix);MusicEngine.hit(id,undefined,.86,stage?'live':undefined);
+ $$(`[data-hit="${id}"]`).forEach(b=>{b.classList.add('struck');clearTimeout(b.flash);b.flash=setTimeout(()=>b.classList.remove('struck'),140);});
+}
+
+</script><script>
+'use strict';
+// The drums & bass editor behind the deck: a step grid for whichever part
+// is being edited, with one level of undo per part.
+let rhythmOpen=false,rhythmPart='drums',rhythmBar=0,rhythmTarget='both';
+const rhythmUndo={};
+
+function rememberRhythm(){
+ rhythmUndo[activeScene]={
+  drums:mix.drums&&copyDrums(mix.drums),bassLine:{...mix.bassLine},
+  bassStyle:mix.styles.bass,bassVoice:mix.bassVoice,layers:mix.layers.slice(0,2)
+ };
+}
+function setDeckDrums(drums){
+ const oldBar=stepsPerBar(deckDrums().meter),newBar=stepsPerBar(drums.meter);
+ if(oldBar!==newBar){
+  // Keep each bass note in its bar and move it to the nearest step in the new meter.
+  mix.bassLine=Object.fromEntries(Object.entries(mix.bassLine).map(([step,note])=>[
+   Math.floor(step/oldBar)*newBar+Math.min(newBar-1,Math.round(step%oldBar*newBar/oldBar)),note
+  ]));
+ }
+ mix.drums=drums;
+}
+function syncDeckRhythm(previousMeter){
+ saveMix();
+ refreshRhythmEditor();
+ if(StudioAudio.current==='freestyle'&&previousMeter!==deckDrums().meter)startDecks();
+ else updateBoard();
+}
+function changeRhythm(change){
+ const meter=deckDrums().meter;
+ rememberRhythm();
+ change();
+ syncDeckRhythm(meter);
+}
+function undoRhythm(){
+ const undo=rhythmUndo[activeScene];
+ if(!undo)return;
+ const meter=deckDrums().meter;
+ mix.drums=undo.drums;
+ mix.bassLine=undo.bassLine;
+ mix.styles.bass=undo.bassStyle;
+ mix.bassVoice=undo.bassVoice;
+ mix.layers.splice(0,2,...undo.layers);
+ delete rhythmUndo[activeScene];
+ syncDeckRhythm(meter);
+}
+function loadDeckTemplate(target){
+ const t=selectedPreset(true);
+ changeRhythm(()=>{
+  if(target!=='bass'){
+   setDeckDrums({meter:t.meter,size:t.next?2:1,swing:t.swing,rows:patternFrom(t),name:t.name,templateId:t.id});
+   mix.layers[0]=true;
+  }
+  if(target!=='drums'){
+   mix.styles.bass=genreBassParts[t.family];
+   mix.bassVoice='bass';
+   mix.layers[1]=true;
+  }
+ });
+}
 function rhythmGrid(drums){
  const bar=stepsPerBar(drums.meter),stride=drumStride(drums),div=meters[drums.meter].div;
  const steps=Array.from({length:bar/stride},(_,i)=>i*stride);
@@ -3382,6 +3435,37 @@ function clearRhythmPart(){
   }
  });
 }
+
+</script><script>
+'use strict';
+// ---- Piano room -------------------------------------------------------------
+// A wider keyboard with a sustain pedal, touch control and MIDI input, for
+// playing pieces rather than sketching loops. The typing window stays 25 keys;
+// the displayed range is larger and follows it.
+const pianoVoices=['grand','piano','organ','bell'];
+const pianoSizes=[25,37,49,61];
+const touchLevels=[.11,.17,.25,.33,.42], touchCutoffs=[1500,2200,3100,4300,5900];
+const touchNames=['Pianissimo','Piano','Mezzo','Forte','Fortissimo'];
+const keptPiano=read('piano',{})||{};
+const piano={
+ voice:pianoVoices.includes(keptPiano.voice)?keptPiano.voice:'grand',
+ size:pianoSizes.includes(keptPiano.size)?keptPiano.size:49,
+ low:inRange(keptPiano.low,12,96,36),
+ touch:inRange(keptPiano.touch,1,5,3)
+};
+let midiStatus='Not connected.', midiBound=false;
+function savePiano(){save('piano',piano);}
+// Keep the 25 keys the computer maps inside the range actually on screen,
+// otherwise typing would hit notes that have no key to light up.
+function fitWindow(){
+ const bottom=keyboardBase(), top=bottom+24;
+ let low=piano.low;
+ if(bottom<low)low=bottom;
+ if(top>low+piano.size-1)low=top-piano.size+1;
+ low=12*Math.floor(low/12);
+ if(top>low+piano.size-1)low=12*Math.ceil((top-piano.size+1)/12);
+ piano.low=Math.max(12,Math.min(108-piano.size,low));
+}
 function windowLabel(){return pitchLabel(keyboardBase())+'\u2013'+pitchLabel(keyboardBase()+24);}
 function grandKeyboard(){
  fitWindow();
@@ -3461,54 +3545,14 @@ function pianoPage(){
   ${link('practice/keys','Practice scales and intervals')}
   </section></div></div>`;
 }
-function freestylePage(){
- return bread('Freestyle studio')+heading('Freestyle studio','Build a groove on two decks. Fade between rhythm and harmony, play a melody with your keyboard, and capture the whole performance.')+
- `<section id="freestyle-board">
- <div class="booth-top"><div><span class="micro">Live mix</span><h2 id="board-groove">${esc(showDeckGroove())}</h2></div>
-  <div class="booth-actions"><button class="btn warm" data-deck-play>▶ Start decks</button><button class="record-btn" data-record>● Record take</button></div></div>
- <div class="booth-clock"><span id="deck-position">Ready · 4-bar progression</span><div class="bar-markers" aria-hidden="true">${[1,2,3,4].map(()=>'<i data-bar-marker></i>').join('')}</div></div>
- <div class="scene-row" role="group" aria-label="Scenes"><span class="micro" aria-hidden="true">Scenes</span>
-  ${Object.keys(sceneSets).map(name=>`<button class="scene" data-scene="${name}" aria-pressed="${name===activeScene}">${name}</button>`).join('')}</div>
- <div class="decks">
-  ${mixerDeck('Rhythm section','rhythm-deck',[0,1])}
-  <div class="mix-center"><span class="micro">Mixer</span>
-   <label>Crossfader <input data-mix="blend" type="range" min="0" max="100" value="${mix.blend}"><span class="range-ends"><small>A · Rhythm</small><small>B · Harmony</small></span></label>
-   ${tempoControl('Tempo for all scenes')}
-   <label>Low-pass filter <input data-mix="filter" type="range" min="0" max="100" value="${mix.filter}"><span class="range-ends"><small>Dark</small><small>Open</small></span></label>
-   <label>Transpose <span id="transpose-read">${mix.transpose>0?'+':''}${mix.transpose} st</span><input data-mix="transpose" type="range" min="-12" max="12" value="${mix.transpose}"><span class="range-ends"><small>-12</small><small>+12</small></span></label>
-  </div>
-  ${mixerDeck('Harmony section','harmony-deck',[2,3])}
- </div>
- <section id="rhythm-editor" class="rhythm-editor" aria-label="Deck A rhythm editor" ${rhythmOpen?'':'hidden'}>${rhythmOpen?rhythmEditorBody():''}</section>
- </section>
- <div class="free-columns"><div class="stack"><section class="panel live-panel"><div class="row-between"><h2>Live instrument</h2><label>Voice <select data-live-sound>${liveSounds.map(k=>`<option value="${k}" ${mix.sound===k?'selected':''}>${voices[k].name}</option>`).join('')}</select></label></div><p>Play over the decks. Hold Q, E and T for a low C-major chord, then play Z, X and C over it with your other hand.</p>${keyboard()}${keyboardHelp()}<output id="live-note" class="compact">Ready for a note</output><div class="divider"></div><h3>Drum pads</h3><p class="compact">Hold Shift and press 1–9 for drum hits. A numeric keypad or a tap on a pad works too.</p><div class="hot-pads">${kit.map(([id,label],i)=>`<button data-hit="${id}" class="hot-pad"><kbd>⇧${i+1}</kbd>${label}</button>`).join('')}</div></section>
- <section class="panel progression"><h2>Write the chord loop</h2><p>Choose one chord per bar. Bass, chords and arpeggio follow the same changes. Changes are heard the next time each part plays.</p><div class="chord-strip">${mix.chords.map((name,i)=>`<label>Bar ${i+1}<select data-progression="${i}">${Object.keys(chordBook).map(c=>`<option ${c===name?'selected':''}>${c}</option>`).join('')}</select></label>`).join('')}</div>${link('practice/beat','Open Practice beat grid')}</section></div><div class="stack"><section class="panel recorder-panel"><div class="row-between"><h2>Your take</h2><output class="clock" id="capture-time">${clockLabel(MusicEngine.recording?MusicEngine.seconds:0)}</output></div><p>Record up to three minutes of the decks, live notes, drum pads and mixer moves. Download the WAV before closing the tab.</p><div id="last-take">${takePlayer()}</div><p id="take-status" role="status">${esc(captureDisplay)}</p></section></div></div>`;
-}
-function exportBeat(isTemplate,deck=false){
- const t=selectedPreset(deck);
- const meter=isTemplate?t.meter:meterName,m=meters[meter],name=isTemplate?t.name:grooveName;
- const bytes=makeBeatMidi(isTemplate?patternFrom(t):beat,meter,isTemplate?t.bpm:bpm,isTemplate?t.swing:swing,
-  isTemplate?m.beats*m.div*(t.next?2:1):getSteps(),isTemplate?1:getStride(),name);
- const url=URL.createObjectURL(new Blob([bytes],{type:'audio/midi'}));
- const a=document.createElement('a');a.href=url;a.download='roomtone-'+name.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/-$/,'')+'.mid';
- document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),30000);
-}
-function pressPad(id){
- const stage=!!$('#freestyle-board');if(stage&&MusicEngine.setup())MusicEngine.setMix(mix);MusicEngine.hit(id,undefined,.86,stage?'live':undefined);
- $$(`[data-hit="${id}"]`).forEach(b=>{b.classList.add('struck');clearTimeout(b.flash);b.flash=setTimeout(()=>b.classList.remove('struck'),140);});
-}
-function pianoShortcut(e){
- const code=e.code||'';
- if(/^Key[A-Z]$/.test(code))return code.slice(3);
- if(/^Digit[0-9]$/.test(code))return code.slice(5);
- if(code.startsWith('Numpad'))return code;
- if(code==='Comma')return ',';
- if(code==='BracketLeft')return '[';
- if(code==='BracketRight')return ']';
- const shiftedDigit='!@#$%^&*('.indexOf(e.key);
- return e.shiftKey&&shiftedDigit>=0?String(shiftedDigit+1):e.key.toUpperCase();
-}
-function typingTarget(el){return el?.closest?.('input,textarea,select,[contenteditable]:not([contenteditable="false"]),[role="textbox"]');}
+
+</script><script>
+'use strict';
+// The switchboard. These listeners are delegated and keyed on data-*
+// attributes, so they stay in one file on purpose: splitting them per
+// feature would duplicate the shared guards and change the order in which
+// a single keystroke is offered around. Loads last, so render() runs once
+// every feature above has initialised its state.
 document.addEventListener('keydown',e=>{
  if(e.repeat||e.isComposing||e.metaKey||e.ctrlKey||e.altKey||typingTarget(e.target)||!$('.lab-keys,.mini-keys,.grand-keys'))return;
  const k=pianoShortcut(e),id='key-'+k,index=mappedKeys.indexOf(k);

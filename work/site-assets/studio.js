@@ -6,6 +6,14 @@ const num=n=>String(n).padStart(2,'0');
 let storageOK=true;
 function read(k,defaultValue){try{return JSON.parse(localStorage.getItem('roomtone.v1.'+k)??'null')??defaultValue;}catch{return defaultValue;}}
 function save(k,v){try{localStorage.setItem('roomtone.v1.'+k,JSON.stringify(v));}catch{storageOK=false;}}
+
+// Shared by the practice room, the deck and the rhythm editor, so they live
+// here rather than in any one of them.
+const degrees=[.5,1,2,4];
+const inRange=(v,lo,hi,fallback)=>Number.isFinite(v)&&v>=lo&&v<=hi?v:fallback;
+const stepsPerBar=meter=>meters[meter].beats*meters[meter].div;
+const validDrumRows=(rows,bar)=>Array.isArray(rows)&&rows.length===kit.length
+ &&rows.every(row=>Array.isArray(row)&&row.length===bar*4&&row.every(x=>x===0||x===1));
 let done=new Set((Array.isArray(read('lessons',[]))?read('lessons',[]):[]).filter(i=>Number.isInteger(i)&&i>=0&&i<course.length));
 let device=read('device','Mac')==='Touch'?'Touch':'Mac', bpm=96,scaleKey='C major',wave='triangle',ear=null, clickOn=false;
 const scales={'C major':[60,62,64,65,67,69,71,72],'G major':[67,69,71,72,74,76,78,79],'A natural minor':[69,71,72,74,76,77,79,81]};

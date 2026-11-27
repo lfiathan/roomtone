@@ -1,7 +1,7 @@
 // Regenerates repositories/music-learning/genre-beats/ from the shipped template
 // library. templates.js is the single source of truth: it defines the kit, the
 // meters, patternFrom() and makeBeatMidi(), and the site exports the same bytes
-// from exportBeat(true) in performance.js.
+// from exportBeat(true) in groove.js.
 const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
@@ -15,7 +15,7 @@ vm.runInContext(fs.readFileSync(path.join(assets, 'templates.js'), 'utf8'), ctx)
 const { beatsLibrary, patternFrom, makeBeatMidi, meters } =
   vm.runInContext('({beatsLibrary,patternFrom,makeBeatMidi,meters})', ctx);
 
-// Same slug rule as exportBeat() in performance.js.
+// Same slug rule as exportBeat() in groove.js.
 const slug = s => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/-$/, '');
 
 const check = process.argv.includes('--check');

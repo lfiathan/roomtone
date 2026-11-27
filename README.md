@@ -16,7 +16,7 @@ window-seat.mid       (base64) ─┘
 
 | Path | What it holds |
 |---|---|
-| `work/site-assets/` | The real source: 15 CSS and JS modules |
+| `work/site-assets/` | The real source: 22 CSS and JS modules |
 | `work/site-template.html` | Page shell the assets are inlined into |
 | `work/*.py`, `work/*.js` | Build scripts (see targets below) |
 | `work/qa/` | WebKit screenshot and assertion harnesses |
@@ -94,20 +94,20 @@ consequences:
 ## Tests
 
 `make qa` compiles two small Objective-C/WebKit harnesses and runs six suites
-against the built page — 1,268 assertions in total:
+against the built page — 1,310 assertions in total:
 
 - `work/qa/check-upgrade.js` — 421 assertions over the keyboard mapping, beat
   grid, templates, routing and WAV capture.
-- `work/qa/check-freestyle.js` — 44 assertions over the deck parts, density,
+- `work/qa/check-freestyle.js` — 49 assertions over the deck parts, density,
   transpose, scene recall and persistence.
 - `work/qa/check-piano.js` — 57 assertions over the piano keybed, the typing
   window, the sustain pedal, touch and MIDI input.
-- `work/qa/check-lessons.js` — 541 assertions over the chapter split, the fixed
+- `work/qa/check-lessons.js` — 571 assertions over the chapter split, the fixed
   lesson shape, the figures, vocabulary order and the quiz.
 - `work/qa/check-widgets.js` — 71 assertions that drive all nine widget kinds:
   pressing keys, toggling cells, dragging faders, starting and stopping the
   transport.
-- `work/qa/check-narrow.js` — 134 assertions that every route fits a 390px
+- `work/qa/check-narrow.js` — 141 assertions that every route fits a 390px
   viewport and that the widget grids scroll rather than squeeze, run at that
   width.
 
@@ -120,6 +120,47 @@ at the point it is defined, so the suite reads those tags back out and fails if
 a term is used in a quiz before the lesson that defines it, or if any term is
 introduced as new twice. Neither rule needs a list to maintain: both are derived
 from the prose itself.
+
+## Where the code lives
+
+Nineteen scripts, inlined in the order below — 3352 lines of JavaScript, plus three
+stylesheets. They are classic scripts sharing one global scope, so a call from
+one file into another resolves at render time whatever the order. What the order
+does decide is the handful of lines that run *as a file loads*:
+
+| `figures.js` | 245 | Five SVG primitives the lessons are drawn with |
+| `widgets.js` | 169 | Widget plumbing: per-instance state, transport, keybed, the `W_KINDS` registry |
+| `widgets-theory.js` | 214 | The chapter 1 widgets: keys, tempo, chords, contour |
+| `widgets-studio.js` | 244 | The chapter 2 and 3 widgets: steps, arrange, mix, compare, tap |
+| `course-theory.js` | 529 | Chapter 1, as data |
+| `course-writing.js` | 248 | Chapter 2, as data |
+| `course-studio.js` | 220 | Chapter 3, as data |
+| `lessons.js` | 43 | Assembles the three chapters and derives each lesson's figures |
+| `handbook.js` | 44 | The GarageBand guide |
+| `sound.js` | 106 | `StudioAudio`: the context, the transport and the step sequencer |
+| `instruments.js` | 133 | `MusicEngine`: voices, drum kit, mixer, recording |
+| `templates.js` | 92 | The 37 genre beats and the chord book |
+| `studio.js` | 175 | Shell, router, lesson rendering, and the helpers everything shares |
+| `keybed.js` | 100 | The typing keyboard: which key sounds which note, what is held, the pedal |
+| `groove.js` | 115 | The practice room: one editable pattern, its genre library and its export |
+| `deck.js` | 255 | Freestyle: four layers over a chord loop, scenes, recording |
+| `rhythm.js` | 154 | The drums & bass step editor behind the deck |
+| `piano.js` | 108 | The piano room: wide keybed, touch, sustain, MIDI in |
+| `wiring.js` | 158 | The switchboard: six delegated listeners, then the first `render()` |
+
+There are exactly three ordering constraints:
+
+- `widgets.js` creates the `W_KINDS` registry that the two widget files assign
+  themselves into.
+- `deck.js` reads `groove.js`'s `presetId` at load time, because the deck's own
+  template selection falls back to the practice room's.
+- `wiring.js` calls `render()`, so it loads once every file above it has
+  initialised its state.
+
+`wiring.js` keeps all six listeners together deliberately. They are delegated
+and keyed on `data-*` attributes, so one `click` handler serves every room at
+once; splitting them per feature would duplicate the shared guards and change
+the order in which a single keystroke is offered around.
 
 ## Course structure
 

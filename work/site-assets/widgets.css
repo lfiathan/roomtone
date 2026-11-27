@@ -23,7 +23,7 @@
 .w-pills{display:flex;gap:7px;flex-wrap:wrap}
 
 /* Keyboards. A widget keybed carries its own frame rather than borrowing
-   .lab-keys, which performance.css lays out as two stacked banks for the
+   .lab-keys, which rooms.css lays out as two stacked banks for the
    practice room — a flat run of keys needs one flex row. The tints say what a
    key is doing: a landmark, a chord member, one end of an interval. */
 .w-keys{display:flex;position:relative;isolation:isolate;height:118px;max-width:100%;
